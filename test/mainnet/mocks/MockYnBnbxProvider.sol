@@ -77,7 +77,8 @@ contract MockYnBnbxProvider is IProvider {
 
         if (isClisBnbStrategyVault(asset)) {
             // base asset to clisBnbStrategy is SlisBnb
-            return ISlisBnbStakeManager(MC.SLIS_BNB_STAKE_MANAGER).convertSnBnbToBnb(IERC4626(asset).convertToAssets(1e18));
+            return
+                ISlisBnbStakeManager(MC.SLIS_BNB_STAKE_MANAGER).convertSnBnbToBnb(IERC4626(asset).convertToAssets(1e18));
         }
 
         revert UnsupportedAsset(asset);

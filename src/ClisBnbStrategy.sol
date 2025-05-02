@@ -15,7 +15,6 @@ error InsufficientSlisBnbReceived();
  * @dev This strategy acts like a vault where users can deposit and withdraw slisBnb.
  */
 contract ClisBnbStrategy is BaseStrategy {
-
     /// @notice Role for deposit manager permissions
     bytes32 public constant DEPOSIT_MANAGER_ROLE = keccak256("DEPOSIT_MANAGER_ROLE");
 
@@ -39,12 +38,11 @@ contract ClisBnbStrategy is BaseStrategy {
         address slisBnb;
     }
 
-    
     /**
      * @notice Initializes the vault with initial parameters
      * @param admin The address that will be granted the DEFAULT_ADMIN_ROLE
-     * @param name The name of the strategy 
-     * @param symbol The symbol of the strategy 
+     * @param name The name of the strategy
+     * @param symbol The symbol of the strategy
      * @param decimals_ The number of decimals for the strategy
      * @param countNativeAsset_ Whether the strategy should count native assets in total assets
      * @param alwaysComputeTotalAssets_ Whether total assets should be computed on every call
@@ -87,7 +85,6 @@ contract ClisBnbStrategy is BaseStrategy {
         vaultStorage.decimals = decimals_;
         vaultStorage.countNativeAsset = countNativeAsset_;
         vaultStorage.alwaysComputeTotalAssets = alwaysComputeTotalAssets_;
-
     }
 
     /**
@@ -151,7 +148,6 @@ contract ClisBnbStrategy is BaseStrategy {
         uint256 shares,
         uint256 baseAssets
     ) internal virtual override {
-        
         // deposit is allowed only for the base asset(i.e. slisBnb for this strategy)
         if (asset_ != asset()) {
             revert UnSupportedAsset(asset_);
@@ -170,10 +166,9 @@ contract ClisBnbStrategy is BaseStrategy {
         }
     }
 
-    
     /**
      * @notice Stakes slisBnb tokens into the provider contract
-     * @dev Only callable by accounts with KEEPER_ROLE. This will be used if there is additional slisBnb 
+     * @dev Only callable by accounts with KEEPER_ROLE. This will be used if there is additional slisBnb
      * delegated to this strategy when sync deposit is disabled and for rewards sent to this strategy
      * @param amount The amount of slisBnb tokens to stake
      */
@@ -331,15 +326,14 @@ contract ClisBnbStrategy is BaseStrategy {
      * @return 0 as this strategy does not charge any fee on raw amount.
      */
     function _feeOnRaw(uint256) public pure override returns (uint256) {
-        return 0; 
+        return 0;
     }
 
     /**
      * @notice Returns the fee on total amount.
      * @return 0 as this strategy does not charge any fee on total amount.
      */
-    function _feeOnTotal(uint256) public pure override returns (uint256) {   
-        return 0; 
+    function _feeOnTotal(uint256) public pure override returns (uint256) {
+        return 0;
     }
-    
 }

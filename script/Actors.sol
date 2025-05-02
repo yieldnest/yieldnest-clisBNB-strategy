@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 
 interface IActors {
     function PROCESSOR_MANAGER() external view returns (address);
-    function ASSET_MANAGER() external view returns (address); 
+    function ASSET_MANAGER() external view returns (address);
     function LISTA_DEPENDENCY_MANAGER_ROLE() external view returns (address);
     function ADMIN() external view returns (address);
     function DEPOSIT_MANAGER() external view returns (address);
