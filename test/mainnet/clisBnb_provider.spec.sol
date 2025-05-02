@@ -12,30 +12,15 @@ contract ClisBnbProviderTest is Test {
         provider = new ClisBnbStrategyRateProvider();
     }
 
-    // function test_Provider_GetRateWBNB() public view {
-    //     uint256 rate = provider.getRate(MC.WBNB);
-    //     assertEq(rate, 1e18, "Rate for WBNB should be 1e18");
-    // }
+    function test_Provider_GetRateWBNB_Revert() public {
+        vm.expectRevert(abi.encodeWithSelector(UnSupportedAsset.selector, MC.WBNB));
+        provider.getRate(MC.WBNB);
+    }
 
-    // function test_Provider_GetRateBNBx() public view {
-    //     uint256 expectedRate = IBNBXStakeManagerV2(MC.BNBX_STAKE_MANAGER).convertBnbXToBnb(1e18);
-    //     uint256 rate = provider.getRate(MC.BNBX);
-    //     assertEq(rate, expectedRate, "Rate for BNBx should match the ratio");
-    // }
-
-    // function test_Provider_GetRateKernelVault() public view {
-    //     address kernelWBNBVault = IStakerGateway(MC.STAKER_GATEWAY).getVault(MC.WBNB);
-    //     uint256 rate = provider.getRate(kernelWBNBVault);
-    //     assertEq(rate, 1e18, "Rate for Kernel WBNB Vault should be 1e18");
-
-    //     address kernelBNBxVault = IStakerGateway(MC.STAKER_GATEWAY).getVault(MC.BNBX);
-    //     rate = provider.getRate(kernelBNBxVault);
-    //     assertEq(
-    //         rate,
-    //         IBNBXStakeManagerV2(MC.BNBX_STAKE_MANAGER).convertBnbXToBnb(1e18),
-    //         "Rate for Kernel BNBx Vault should match the ratio"
-    //     );
-    // }
+    function test_Provider_GetRateSlisBnb() public view {
+        uint256 rate = provider.getRate(MC.SLIS_BNB);
+        assertEq(rate, 1e18, "Rate for SlisBnb should be 1e18 since it's the base asset of ClisBnbStrategy");
+    }
 
     function test_Provider_UnsupportedAsset() public {
         address unsupportedAsset = address(0x123);
