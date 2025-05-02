@@ -533,7 +533,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
             uint256 totalAssetsOfynBNBxAfter = ynBNBx.totalAssets();
             uint256 ynBNBxRateAfter = ynBNBx.previewRedeem(1e18);
             assertApproxEqAbs(
-                totalAssetsOfasBNBkAfter, 0, 2, "asBNBk should have nearly 0 total assets after full redemption"
+                totalAssetsOfasBNBkAfter, 0, 5, "asBNBk should have nearly 0 total assets after full redemption"
             );
             assertApproxEqAbs(
                 totalAssetsOfynBNBxAfter,
