@@ -2,6 +2,27 @@
 src = "src"
 out = "out"
 libs = ["lib"]
-test = "test"
+test = "test/unit"
+evm_version = "cancun"
+optimizer = true
+optimizer-runs = 200
+solc_version = "0.8.24"
+# the following is needed after https://github.com/foundry-rs/foundry/pull/9537
+allow_internal_expect_revert = true
+fs_permissions = [
+  { access = "read-write", path = "./deployments" },
+  { access = "read", path = "./" },
+]
 
-# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+[profile.mainnet]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test/mainnet"
+evm_version = "cancun"
+solc_version = "0.8.24"
+allow_internal_expect_revert = true
+fs_permissions = [
+  { access = "read-write", path = "./deployments" },
+  { access = "read", path = "./" },
+]
