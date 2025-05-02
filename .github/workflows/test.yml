@@ -1,23 +1,57 @@
-name: Forge Tests
+name: CI
 
-on: push
+on:
+  push:
+    branches:
+    pull_request:  # Runs on all branches
+    workflow_dispatch:  # Manual trigger
 
+env:
+  FOUNDRY_PROFILE: mainnet
+  BNB_MAINNET_RPC_URL: ${{ secrets.BNB_MAINNET_RPC_URL }}
 jobs:
-  Forge-Tests:
+  check:
+    strategy:
+      fail-fast: true
+
+    name: Foundry project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
 
-      - name: Checkout submodules
+      - name: Show Forge version
         run: |
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
-          make install
+          forge --version
 
-      - name: Mainnet Forge tests
+      - name: Run Forge fmt default
+        env:
+          FOUNDRY_PROFILE: default
+        run: |
+          forge fmt --check
+        id: fmt_default
+
+      - name: Run Forge fmt mainnet tests
         env:
           FOUNDRY_PROFILE: mainnet
-          BNB_MAINNET_RPC_URL: ${{ secrets.BNB_MAINNET_RPC_URL }}
-        run: make ci-test rpc=$BNB_MAINNET_RPC_URL
+        run: |
+          forge fmt --check
+        id: fmt_mainnet
+
+      - name: Run Forge build
+        run: |
+          forge build --sizes
+        id: build
+
+      - name: Run Forge mainnet units
+        env:
+          FOUNDRY_PROFILE: mainnet
+        run: |
+          FOUNDRY_PROFILE=mainnet forge test -vvv
+        id: test_mainnet
