@@ -27,15 +27,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
     function setUp() public virtual {
         ClisBnbStrategy clisBnbStrategyImplementation = new ClisBnbStrategy();
         clisBnbStrategy = ClisBnbStrategy(
-            payable(
-                address(
-                    new TransparentUpgradeableProxy(
-                        address(clisBnbStrategyImplementation),
-                        ADMIN,
-                        ""
-                    )
-                )
-            )
+            payable(address(new TransparentUpgradeableProxy(address(clisBnbStrategyImplementation), ADMIN, "")))
         );
         clisBnbStrategy.initialize(ADMIN, "YieldNest ClisBnB strategy", "ynClisBnb", 18, false, true, MC.SLIS_BNB);
         clisBnbStrategyRateProvider = new ClisBnbStrategyRateProvider();
@@ -69,7 +61,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
 
         vm.stopPrank();
 
-       {
+        {
             IVault.FunctionRule memory rule = IVault.FunctionRule({
                 isActive: true,
                 paramRules: new IVault.ParamRule[](0),
@@ -115,7 +107,9 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             address(clisBnbStrategyRateProvider),
             "Vault provider should be ClisBnbStrategyRateProvider"
         );
-        assertEq(address(clisBnbStrategy.listaInteraction()), address(interaction), "Vault interaction should be Interaction");
+        assertEq(
+            address(clisBnbStrategy.listaInteraction()), address(interaction), "Vault interaction should be Interaction"
+        );
         assertEq(
             address(clisBnbStrategy.slisBnbProvider()),
             MC.SLIS_BNB_PROVIDER,
@@ -455,7 +449,9 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         vm.startPrank(ADMIN);
         clisBnbStrategy.setListaInteraction(Interaction(newInteraction));
         vm.stopPrank();
-        assertEq(address(clisBnbStrategy.listaInteraction()), newInteraction, "Interaction should be set to newInteraction");
+        assertEq(
+            address(clisBnbStrategy.listaInteraction()), newInteraction, "Interaction should be set to newInteraction"
+        );
 
         address user = makeAddr("user");
         vm.startPrank(user);
