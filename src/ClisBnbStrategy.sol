@@ -156,20 +156,20 @@ contract ClisBnbStrategy is BaseStrategy {
         uint256 baseAssets
     ) internal virtual override {
         // deposit is allowed only for the base asset(i.e. slisBnb for this strategy)
-        if (asset_ != asset()) {
+        if (IERC20(asset_) != slisBnb()) {
             revert UnSupportedAsset(asset_);
         }
 
         // call the base strategy deposit function for accounting
         super._deposit(asset_, caller, receiver, assets, shares, baseAssets);
 
-        StrategyStorage storage strategyStorage = _strategyStorage();
+        ISlisBnbProvider _slisBnbProvider = slisBnbProvider();
         // if sync deposit is enabled, deposit the slisBnb received from caller to Lista
-        if (strategyStorage.syncDeposit) {
+        if (syncDeposit()) {
             // increase allowance for the slisBnb provider contract
-            SafeERC20.safeIncreaseAllowance(IERC20(asset_), address(strategyStorage.slisBnbProvider), assets);
+            SafeERC20.safeIncreaseAllowance(IERC20(asset_), address(_slisBnbProvider), assets);
             // provide the slisBnb to the slisBnb provider contract and yieldnest's institutional wallet set to recipient of clisBnb received
-            strategyStorage.slisBnbProvider.provide(assets, strategyStorage.yieldNestMpcWallet);
+            _slisBnbProvider.provide(assets, yieldNestMpcWallet());
         }
     }
 
