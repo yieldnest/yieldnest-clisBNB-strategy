@@ -5,6 +5,7 @@ import {IERC20, Math, SafeERC20} from "lib/yieldnest-vault/src/Common.sol";
 import {BaseStrategy} from "lib/yieldnest-vault/src/strategy/BaseStrategy.sol";
 import {Interaction} from "src/interfaces/Interaction.sol";
 import {ISlisBnbProvider} from "src/interfaces/ISlisBnbProvider.sol";
+import {ERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
 error UnSupportedAsset(address asset);
 error InsufficientSlisBnbReceived();
@@ -26,16 +27,16 @@ contract ClisBnbStrategy is BaseStrategy {
 
     /// @notice Storage structure for strategy-specific parameters
     struct StrategyStorage {
-        // interaction contract used to get locked slisBnb by this strategy
-        address interaction;
+        // lista interaction contract used to get locked slisBnb by this strategy
+        Interaction listaInteraction;
         // whether to sync deposit
         bool syncDeposit;
         // slisBnb Provider contract to provide slisBnb and get clisBnb
-        address slisBnbProvider;
+        ISlisBnbProvider slisBnbProvider;
         // Yieldnest's institutional wallet address which holds clisBnb
         address yieldNestMpcWallet;
         // address of slisBnb
-        address slisBnb;
+        IERC20 slisBnb;
     }
 
     /**
@@ -46,6 +47,7 @@ contract ClisBnbStrategy is BaseStrategy {
      * @param decimals_ The number of decimals for the strategy
      * @param countNativeAsset_ Whether the strategy should count native assets in total assets
      * @param alwaysComputeTotalAssets_ Whether total assets should be computed on every call
+     * @param slisBnb_ The address of the slisBnb token
      */
     function initialize(
         address admin,
@@ -53,9 +55,10 @@ contract ClisBnbStrategy is BaseStrategy {
         string memory symbol,
         uint8 decimals_,
         bool countNativeAsset_,
-        bool alwaysComputeTotalAssets_
+        bool alwaysComputeTotalAssets_,
+        address slisBnb_
     ) external virtual initializer {
-        _initialize(admin, name, symbol, decimals_, countNativeAsset_, alwaysComputeTotalAssets_);
+        _initialize(admin, name, symbol, decimals_, countNativeAsset_, alwaysComputeTotalAssets_, slisBnb_);
     }
 
     /**
@@ -73,7 +76,8 @@ contract ClisBnbStrategy is BaseStrategy {
         string memory symbol,
         uint8 decimals_,
         bool countNativeAsset_,
-        bool alwaysComputeTotalAssets_
+        bool alwaysComputeTotalAssets_,
+        address slisBnb_
     ) internal virtual {
         __ERC20_init(name, symbol);
         __AccessControl_init();
@@ -85,6 +89,9 @@ contract ClisBnbStrategy is BaseStrategy {
         vaultStorage.decimals = decimals_;
         vaultStorage.countNativeAsset = countNativeAsset_;
         vaultStorage.alwaysComputeTotalAssets = alwaysComputeTotalAssets_;
+        _addAsset(slisBnb_, ERC20(slisBnb_).decimals(), true);
+        _setAssetWithdrawable(slisBnb_, true);
+        _strategyStorage().slisBnb = IERC20(slisBnb_);
     }
 
     /**
@@ -92,17 +99,17 @@ contract ClisBnbStrategy is BaseStrategy {
      * @dev If true, the strategy will instantly provide slisBnb deposited to Lista
      * @return syncDeposit The sync deposit flag.
      */
-    function getSyncDeposit() public view returns (bool syncDeposit) {
-        return _getStrategyStorage().syncDeposit;
+    function syncDeposit() public view returns (bool) {
+        return _strategyStorage().syncDeposit;
     }
 
     /**
-     * @notice Returns the interaction contract address.
+     * @notice Returns the lista interaction contract address.
      * @dev This contract is used to get locked slisBnb by this strategy
      * @return interaction The interaction contract address.
      */
-    function getInteraction() public view returns (address interaction) {
-        return _getStrategyStorage().interaction;
+    function listaInteraction() public view returns (Interaction) {
+        return _strategyStorage().listaInteraction;
     }
 
     /**
@@ -110,8 +117,8 @@ contract ClisBnbStrategy is BaseStrategy {
      * @dev This contract is used to deposit slisBnb from this strategy and get clisBnb
      * @return slisBnbProvider The slisBnb provider contract address.
      */
-    function getSlisBnbProvider() public view returns (address slisBnbProvider) {
-        return _getStrategyStorage().slisBnbProvider;
+    function slisBnbProvider() public view returns (ISlisBnbProvider) {
+        return _strategyStorage().slisBnbProvider;
     }
 
     /**
@@ -119,16 +126,16 @@ contract ClisBnbStrategy is BaseStrategy {
      * @dev This address will hold clisBnb delegated from this strategy
      * @return yieldNestMpcWallet The Yieldnest's institutional wallet address.
      */
-    function getYieldNestMpcWallet() public view returns (address yieldNestMpcWallet) {
-        return _getStrategyStorage().yieldNestMpcWallet;
+    function yieldNestMpcWallet() public view returns (address) {
+        return _strategyStorage().yieldNestMpcWallet;
     }
 
     /**
      * @notice Returns the slisBnb token address.
      * @return slisBnb The slisBnb address.
      */
-    function getSlisBnb() public view returns (address slisBnb) {
-        return _getStrategyStorage().slisBnb;
+    function slisBnb() public view returns (IERC20) {
+        return _strategyStorage().slisBnb;
     }
 
     /**
@@ -156,29 +163,14 @@ contract ClisBnbStrategy is BaseStrategy {
         // call the base strategy deposit function for accounting
         super._deposit(asset_, caller, receiver, assets, shares, baseAssets);
 
-        StrategyStorage storage strategyStorage = _getStrategyStorage();
+        StrategyStorage storage strategyStorage = _strategyStorage();
         // if sync deposit is enabled, deposit the slisBnb received from caller to Lista
         if (strategyStorage.syncDeposit) {
             // increase allowance for the slisBnb provider contract
             SafeERC20.safeIncreaseAllowance(IERC20(asset_), address(strategyStorage.slisBnbProvider), assets);
             // provide the slisBnb to the slisBnb provider contract and yieldnest's institutional wallet set to recipient of clisBnb received
-            ISlisBnbProvider(strategyStorage.slisBnbProvider).provide(assets, strategyStorage.yieldNestMpcWallet);
+            strategyStorage.slisBnbProvider.provide(assets, strategyStorage.yieldNestMpcWallet);
         }
-    }
-
-    /**
-     * @notice Stakes slisBnb tokens into the provider contract
-     * @dev Only callable by accounts with KEEPER_ROLE. This will be used if there is additional slisBnb
-     * delegated to this strategy when sync deposit is disabled and for rewards sent to this strategy
-     * @param amount The amount of slisBnb tokens to stake
-     */
-    function stakeSlisBnb(uint256 amount) external onlyRole(KEEPER_ROLE) {
-        address slisBnb = getSlisBnb();
-        StrategyStorage storage strategyStorage = _getStrategyStorage();
-        // increase allowance for the slisBnb provider contract
-        SafeERC20.safeIncreaseAllowance(IERC20(slisBnb), address(strategyStorage.slisBnbProvider), amount);
-        // provide the slisBnb to the slisBnb provider contract and yieldnest's institutional wallet set to recipient of clisBnb received
-        ISlisBnbProvider(strategyStorage.slisBnbProvider).provide(amount, strategyStorage.yieldNestMpcWallet);
     }
 
     /**
@@ -219,14 +211,13 @@ contract ClisBnbStrategy is BaseStrategy {
 
         uint256 vaultBalance = IERC20(asset_).balanceOf(address(this));
 
-        StrategyStorage storage strategyStorage = _getStrategyStorage();
         // if the vault balance is less than the assets to withdraw, unstake the slisBnb
         if (vaultBalance < assets) {
             uint256 amountToUnstake = assets - vaultBalance;
             // unstake the slisBnb
-            ISlisBnbProvider(strategyStorage.slisBnbProvider).release(address(this), amountToUnstake);
+            slisBnbProvider().release(address(this), amountToUnstake);
             // check if the amount of slisBnb received is less than the amount to unstake
-            uint256 slisBnbAmountReceived = IERC20(strategyStorage.slisBnb).balanceOf(address(this)) - vaultBalance;
+            uint256 slisBnbAmountReceived = slisBnb().balanceOf(address(this)) - vaultBalance;
             // if the amount of slisBnb received is less than the amount to unstake, revert
             // this can be possible if withdrawal is changed from instant to delayed by Lista for slisBnb
             if (slisBnbAmountReceived < amountToUnstake) {
@@ -247,13 +238,14 @@ contract ClisBnbStrategy is BaseStrategy {
      * @return availableAssets The available amount of assets.
      */
     function _availableAssets(address asset_) internal view virtual override returns (uint256 availableAssets) {
-        StrategyStorage storage strategyStorage = _getStrategyStorage();
-        availableAssets = IERC20(asset_).balanceOf(address(this));
-        if (asset_ == strategyStorage.slisBnb) {
+        IERC20 _slisBnb = slisBnb();
+        if (asset_ == address(_slisBnb)) {
+            availableAssets = _slisBnb.balanceOf(address(this));
             // add the locked slisBnb to the available assets as it can be 1:1 claimable by this strategy from Lista
-            availableAssets += Interaction(strategyStorage.interaction).locked(asset_, address(this));
+            availableAssets += listaInteraction().locked(asset_, address(this));
+        } else {
+            availableAssets = super._availableAssets(asset_);
         }
-        return availableAssets;
     }
 
     /**
@@ -262,59 +254,59 @@ contract ClisBnbStrategy is BaseStrategy {
      * @return totalBaseBalance The total assets in the vault in slisBnb.
      */
     function computeTotalAssets() public view virtual override returns (uint256 totalBaseBalance) {
+        totalBaseBalance = super.computeTotalAssets();
         // get the slisBnb address
-        address slisBnb = getSlisBnb();
+        IERC20 _slisBnb = slisBnb();
         // get the locked slisBnb by this strategy from Lista
-        totalBaseBalance = Interaction(getInteraction()).locked(slisBnb, address(this));
-        // add the balance of slisBnb in the vault
-        totalBaseBalance += IERC20(slisBnb).balanceOf(address(this));
+        // @dev the amount of slisBnb present in vault is already included in totalBaseBalance during call to super.computeTotalAssets()
+        totalBaseBalance += listaInteraction().locked(address(_slisBnb), address(this));
     }
 
     /**
-     * @notice Sets the interaction contract address.
-     * @param interaction The address of the interaction contract.
+     * @notice Sets the lista interaction contract address.
+     * @param _listaInteraction The address of the lista interaction contract.
      */
-    function setInteraction(address interaction) external onlyRole(LISTA_DEPENDENCY_MANAGER_ROLE) {
-        _getStrategyStorage().interaction = interaction;
+    function setListaInteraction(Interaction _listaInteraction) external onlyRole(LISTA_DEPENDENCY_MANAGER_ROLE) {
+        _strategyStorage().listaInteraction = _listaInteraction;
     }
 
     /**
      * @notice Sets the slisBnb provider contract address.
-     * @param slisBnbProvider The address of the slisBnb provider contract.
+     * @param _slisBnbProvider The address of the slisBnb provider contract.
      */
-    function setSlisBnbProvider(address slisBnbProvider) external onlyRole(LISTA_DEPENDENCY_MANAGER_ROLE) {
-        _getStrategyStorage().slisBnbProvider = slisBnbProvider;
+    function setSlisBnbProvider(ISlisBnbProvider _slisBnbProvider) external onlyRole(LISTA_DEPENDENCY_MANAGER_ROLE) {
+        _strategyStorage().slisBnbProvider = _slisBnbProvider;
     }
 
     /**
      * @notice Sets the Yieldnest's institutional wallet address.
-     * @param yieldNestMpcWallet The address of the Yieldnest's institutional wallet.
+     * @param _yieldNestMpcWallet The address of the Yieldnest's institutional wallet.
      */
-    function setYieldNestMpcWallet(address yieldNestMpcWallet) external onlyRole(LISTA_DEPENDENCY_MANAGER_ROLE) {
-        _getStrategyStorage().yieldNestMpcWallet = yieldNestMpcWallet;
+    function setYieldNestMpcWallet(address _yieldNestMpcWallet) external onlyRole(LISTA_DEPENDENCY_MANAGER_ROLE) {
+        _strategyStorage().yieldNestMpcWallet = _yieldNestMpcWallet;
     }
 
     /**
      * @notice Sets the slisBnb address.
-     * @param slisBnb The address of the slisBnb.
+     * @param _slisBnb The address of the slisBnb.
      */
-    function setSlisBnb(address slisBnb) external onlyRole(LISTA_DEPENDENCY_MANAGER_ROLE) {
-        _getStrategyStorage().slisBnb = slisBnb;
+    function setSlisBnb(IERC20 _slisBnb) external onlyRole(LISTA_DEPENDENCY_MANAGER_ROLE) {
+        _strategyStorage().slisBnb = _slisBnb;
     }
 
     /**
      * @notice Sets the sync deposit flag.
-     * @param syncDeposit The sync deposit flag.
+     * @param _syncDeposit The sync deposit flag.
      */
-    function setSyncDeposit(bool syncDeposit) external onlyRole(DEPOSIT_MANAGER_ROLE) {
-        _getStrategyStorage().syncDeposit = syncDeposit;
+    function setSyncDeposit(bool _syncDeposit) external onlyRole(DEPOSIT_MANAGER_ROLE) {
+        _strategyStorage().syncDeposit = _syncDeposit;
     }
 
     /**
      * @notice Retrieves the strategy storage structure.
      * @return $ The strategy storage structure.
      */
-    function _getStrategyStorage() internal pure virtual returns (StrategyStorage storage $) {
+    function _strategyStorage() internal pure virtual returns (StrategyStorage storage $) {
         assembly {
             // keccak256("yieldnest.storage.clisbnb.strategy")
             $.slot := 0xb87b7aad984f77ca282edf93f55d657fc83437b8030dad945b18a51b7c01dfcc

@@ -11,6 +11,9 @@ import {TransparentUpgradeableProxy} from
     "lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ClisBnbStrategyRateProvider} from "src/module/ClisBnbStrategyRateProvider.sol";
 import {IAccessControl} from "lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import {ISlisBnbProvider} from "src/interfaces/ISlisBnbProvider.sol";
+import {IVault} from "lib/yieldnest-vault/src/interface/IVault.sol";
+import {IValidator} from "lib/yieldnest-vault/src/interface/IValidator.sol";
 
 contract YnClisBnbStrategyTest is Test, MainnetActors {
     ClisBnbStrategy public clisBnbStrategy;
@@ -29,19 +32,12 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
                     new TransparentUpgradeableProxy(
                         address(clisBnbStrategyImplementation),
                         ADMIN,
-                        abi.encodeWithSelector(
-                            ClisBnbStrategy.initialize.selector,
-                            ADMIN,
-                            "YieldNest ClisBnB strategy",
-                            "ynClisBnb",
-                            18,
-                            false,
-                            true
-                        )
+                        ""
                     )
                 )
             )
         );
+        clisBnbStrategy.initialize(ADMIN, "YieldNest ClisBnB strategy", "ynClisBnb", 18, false, true, MC.SLIS_BNB);
         clisBnbStrategyRateProvider = new ClisBnbStrategyRateProvider();
 
         interaction = Interaction(MC.INTERACTION);
@@ -64,18 +60,28 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
 
         clisBnbStrategy.setProvider(address(clisBnbStrategyRateProvider));
         clisBnbStrategy.setSyncDeposit(true);
-        clisBnbStrategy.setInteraction(address(interaction));
-        clisBnbStrategy.setSlisBnbProvider(MC.SLIS_BNB_PROVIDER);
+        clisBnbStrategy.setListaInteraction(interaction);
+        clisBnbStrategy.setSlisBnbProvider(ISlisBnbProvider(MC.SLIS_BNB_PROVIDER));
         clisBnbStrategy.setYieldNestMpcWallet(MC.YIELDNEST_MPC_WALLET);
-        clisBnbStrategy.setSlisBnb(MC.SLIS_BNB);
-
-        clisBnbStrategy.addAsset(MC.SLIS_BNB, true);
-        // Set SLIS_BNB as withdrawable
-        clisBnbStrategy.setAssetWithdrawable(MC.SLIS_BNB, true);
+        clisBnbStrategy.setSlisBnb(IERC20(MC.SLIS_BNB));
 
         clisBnbStrategy.unpause();
 
         vm.stopPrank();
+
+       {
+            IVault.FunctionRule memory rule = IVault.FunctionRule({
+                isActive: true,
+                paramRules: new IVault.ParamRule[](0),
+                validator: IValidator(address(0))
+            });
+
+            // add rule for processor
+            vm.startPrank(PROCESSOR_MANAGER);
+            clisBnbStrategy.setProcessorRule(address(MC.SLIS_BNB), IERC20.approve.selector, rule);
+            clisBnbStrategy.setProcessorRule(address(MC.SLIS_BNB_PROVIDER), ISlisBnbProvider.provide.selector, rule);
+            vm.stopPrank();
+        }
 
         clisBnbStrategy.processAccounting();
     }
@@ -109,19 +115,19 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             address(clisBnbStrategyRateProvider),
             "Vault provider should be ClisBnbStrategyRateProvider"
         );
-        assertEq(clisBnbStrategy.getInteraction(), address(interaction), "Vault interaction should be Interaction");
+        assertEq(address(clisBnbStrategy.listaInteraction()), address(interaction), "Vault interaction should be Interaction");
         assertEq(
-            clisBnbStrategy.getSlisBnbProvider(),
+            address(clisBnbStrategy.slisBnbProvider()),
             MC.SLIS_BNB_PROVIDER,
             "Vault slisBnbProvider should be SLIS_BNB_PROVIDER"
         );
         assertEq(
-            clisBnbStrategy.getYieldNestMpcWallet(),
+            clisBnbStrategy.yieldNestMpcWallet(),
             MC.YIELDNEST_MPC_WALLET,
             "Vault yieldNestMpcWallet should be YIELDNEST_MPC_WALLET"
         );
-        assertEq(clisBnbStrategy.getSlisBnb(), MC.SLIS_BNB, "Vault slisBnb should be SLIS_BNB");
-        assertEq(clisBnbStrategy.getSyncDeposit(), true, "Vault syncDeposit should be true");
+        assertEq(address(clisBnbStrategy.slisBnb()), MC.SLIS_BNB, "Vault slisBnb should be SLIS_BNB");
+        assertEq(clisBnbStrategy.syncDeposit(), true, "Vault syncDeposit should be true");
 
         // Test the totalAssets function
         uint256 totalAssets = clisBnbStrategy.totalAssets();
@@ -408,9 +414,20 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy));
         uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
 
-        vm.startPrank(KEEPER);
-        clisBnbStrategy.stakeSlisBnb(rewardAmount);
-        vm.stopPrank();
+        {
+            vm.startPrank(PROCESSOR);
+            address[] memory targets = new address[](2);
+            uint256[] memory values = new uint256[](2);
+            bytes[] memory datas = new bytes[](2);
+            targets[0] = address(slisBnb);
+            values[0] = 0;
+            datas[0] = abi.encodeWithSelector(IERC20.approve.selector, MC.SLIS_BNB_PROVIDER, rewardAmount);
+            targets[1] = MC.SLIS_BNB_PROVIDER;
+            values[1] = 0;
+            datas[1] = abi.encodeWithSelector(ISlisBnbProvider.provide.selector, rewardAmount, MC.YIELDNEST_MPC_WALLET);
+            clisBnbStrategy.processor(targets, values, datas);
+            vm.stopPrank();
+        }
 
         uint256 clisBnbStrategyRateAfter = clisBnbStrategy.previewRedeem(1 ether);
         uint256 totalAssetsAfter = clisBnbStrategy.totalAssets();
@@ -436,9 +453,9 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
     function test_SetInteraction() public {
         address newInteraction = makeAddr("newInteraction");
         vm.startPrank(ADMIN);
-        clisBnbStrategy.setInteraction(newInteraction);
+        clisBnbStrategy.setListaInteraction(Interaction(newInteraction));
         vm.stopPrank();
-        assertEq(clisBnbStrategy.getInteraction(), newInteraction, "Interaction should be set to newInteraction");
+        assertEq(address(clisBnbStrategy.listaInteraction()), newInteraction, "Interaction should be set to newInteraction");
 
         address user = makeAddr("user");
         vm.startPrank(user);
@@ -449,17 +466,17 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
                 clisBnbStrategy.LISTA_DEPENDENCY_MANAGER_ROLE()
             )
         );
-        clisBnbStrategy.setInteraction(newInteraction);
+        clisBnbStrategy.setListaInteraction(Interaction(newInteraction));
         vm.stopPrank();
     }
 
     function test_SetSlisBnbProvider() public {
         address newSlisBnbProvider = makeAddr("newSlisBnbProvider");
         vm.startPrank(ADMIN);
-        clisBnbStrategy.setSlisBnbProvider(newSlisBnbProvider);
+        clisBnbStrategy.setSlisBnbProvider(ISlisBnbProvider(newSlisBnbProvider));
         vm.stopPrank();
         assertEq(
-            clisBnbStrategy.getSlisBnbProvider(),
+            address(clisBnbStrategy.slisBnbProvider()),
             newSlisBnbProvider,
             "SlisBnb provider should be set to newSlisBnbProvider"
         );
@@ -473,7 +490,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
                 clisBnbStrategy.LISTA_DEPENDENCY_MANAGER_ROLE()
             )
         );
-        clisBnbStrategy.setSlisBnbProvider(newSlisBnbProvider);
+        clisBnbStrategy.setSlisBnbProvider(ISlisBnbProvider(newSlisBnbProvider));
         vm.stopPrank();
     }
 
@@ -483,7 +500,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         clisBnbStrategy.setYieldNestMpcWallet(newYieldNestMpcWallet);
         vm.stopPrank();
         assertEq(
-            clisBnbStrategy.getYieldNestMpcWallet(),
+            clisBnbStrategy.yieldNestMpcWallet(),
             newYieldNestMpcWallet,
             "YieldNestMpcWallet should be set to newYieldNestMpcWallet"
         );
@@ -504,9 +521,9 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
     function test_SetSlisBnb() public {
         address newSlisBnb = makeAddr("newSlisBnb");
         vm.startPrank(ADMIN);
-        clisBnbStrategy.setSlisBnb(newSlisBnb);
+        clisBnbStrategy.setSlisBnb(IERC20(newSlisBnb));
         vm.stopPrank();
-        assertEq(clisBnbStrategy.getSlisBnb(), newSlisBnb, "SlisBnb should be set to newSlisBnb");
+        assertEq(address(clisBnbStrategy.slisBnb()), newSlisBnb, "SlisBnb should be set to newSlisBnb");
 
         address user = makeAddr("user");
         vm.startPrank(user);
@@ -517,7 +534,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
                 clisBnbStrategy.LISTA_DEPENDENCY_MANAGER_ROLE()
             )
         );
-        clisBnbStrategy.setSlisBnb(newSlisBnb);
+        clisBnbStrategy.setSlisBnb(IERC20(newSlisBnb));
         vm.stopPrank();
     }
 
@@ -526,7 +543,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         vm.startPrank(ADMIN);
         clisBnbStrategy.setSyncDeposit(newSyncDeposit);
         vm.stopPrank();
-        assertEq(clisBnbStrategy.getSyncDeposit(), newSyncDeposit, "SyncDeposit should be set to newSyncDeposit");
+        assertEq(clisBnbStrategy.syncDeposit(), newSyncDeposit, "SyncDeposit should be set to newSyncDeposit");
 
         address user = makeAddr("user");
         vm.startPrank(user);

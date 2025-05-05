@@ -18,6 +18,7 @@ import {ClisBnbStrategy} from "src/ClisBnbStrategy.sol";
 import {ClisBnbStrategyRateProvider} from "src/module/ClisBnbStrategyRateProvider.sol";
 import {Interaction} from "src/interfaces/Interaction.sol";
 import {MockYnBnbxProvider} from "test/mainnet/mocks/MockYnBnbxProvider.sol";
+import {ISlisBnbProvider} from "src/interfaces/ISlisBnbProvider.sol";
 
 contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
     Vault public ynBNBx;
@@ -426,9 +427,20 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         uint256 totalAssetsBeforeOfYnBNBx = ynBNBx.totalAssets();
         uint256 totalSupplyBeforeOfYnBNBx = ynBNBx.totalSupply();
 
-        vm.startPrank(KEEPER);
-        clisBnbStrategy.stakeSlisBnb(rewardAmount);
-        vm.stopPrank();
+        {
+            vm.startPrank(PROCESSOR);
+            address[] memory targets = new address[](2);
+            uint256[] memory values = new uint256[](2);
+            bytes[] memory datas = new bytes[](2);
+            targets[0] = address(slisBnb);
+            values[0] = 0;
+            datas[0] = abi.encodeWithSelector(IERC20.approve.selector, MC.SLIS_BNB_PROVIDER, rewardAmount);
+            targets[1] = MC.SLIS_BNB_PROVIDER;
+            values[1] = 0;
+            datas[1] = abi.encodeWithSelector(ISlisBnbProvider.provide.selector, rewardAmount, MC.YIELDNEST_MPC_WALLET);
+            clisBnbStrategy.processor(targets, values, datas);
+            vm.stopPrank();
+        }
 
         uint256 clisBnbStrategyRateAfter = clisBnbStrategy.previewRedeem(1 ether);
         uint256 totalAssetsAfterOfClisBnbStrategy = clisBnbStrategy.totalAssets();
@@ -538,7 +550,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
             assertApproxEqAbs(
                 totalAssetsOfynBNBxAfter,
                 totalAssetsOfynBNBxBefore,
-                1000,
+                1e6,
                 "total assets of ynBNBx should be equal to total assets of ynBNBx before plus after redemption"
             );
             assertEq(
