@@ -236,7 +236,7 @@ contract ClisBnbStrategy is BaseStrategy {
         // if the vault balance is less than the assets to withdraw, unstake the slisBnb
         if (vaultBalance < assets) {
             // withdraw is allowed only for the base asset(i.e. slisBnb for this strategy)
-            if (asset_ != slisBnb()) {
+            if (IERC20(asset_) != slisBnb()) {
                 revert UnsupportedAsset(asset_);
             }
             uint256 amountToUnstake = assets - vaultBalance;
