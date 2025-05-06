@@ -185,12 +185,8 @@ contract ClisBnbStrategy is BaseStrategy {
         // call the base strategy deposit function for accounting
         super._deposit(asset_, caller, receiver, assets, shares, baseAssets);
 
-        // if sync deposit is enabled, deposit the slisBnb received from caller to Lista
-        if (syncDeposit()) {
-            // deposit is allowed only for the base asset(i.e. slisBnb for this strategy)
-            if (IERC20(asset_) != slisBnb()) {
-                revert UnsupportedAsset(asset_);
-            }
+        // if sync deposit is enabled and the asset is slisBnb, deposit the slisBnb received from caller to Lista
+        if (IERC20(asset_) == slisBnb() && syncDeposit()) {
             ISlisBnbProvider _slisBnbProvider = slisBnbProvider();
             // increase allowance for the slisBnb provider contract
             SafeERC20.safeIncreaseAllowance(IERC20(asset_), address(_slisBnbProvider), assets);
