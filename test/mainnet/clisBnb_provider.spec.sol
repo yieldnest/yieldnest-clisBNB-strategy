@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test} from "lib/forge-std/src/Test.sol";
 import {MainnetContracts as MC} from "script/Contracts.sol";
-import {ClisBnbStrategyRateProvider, UnSupportedAsset} from "src/module/ClisBnbStrategyRateProvider.sol";
+import {ClisBnbStrategyRateProvider} from "src/module/ClisBnbStrategyRateProvider.sol";
 
 contract ClisBnbProviderTest is Test {
     ClisBnbStrategyRateProvider public provider;
@@ -13,7 +13,7 @@ contract ClisBnbProviderTest is Test {
     }
 
     function test_Provider_GetRateWBNB_Revert() public {
-        vm.expectRevert(abi.encodeWithSelector(UnSupportedAsset.selector, MC.WBNB));
+        vm.expectRevert(abi.encodeWithSelector(ClisBnbStrategyRateProvider.UnsupportedAsset.selector, MC.WBNB));
         provider.getRate(MC.WBNB);
     }
 
@@ -24,7 +24,7 @@ contract ClisBnbProviderTest is Test {
 
     function test_Provider_UnsupportedAsset() public {
         address unsupportedAsset = address(0x123);
-        vm.expectRevert(abi.encodeWithSelector(UnSupportedAsset.selector, unsupportedAsset));
+        vm.expectRevert(abi.encodeWithSelector(ClisBnbStrategyRateProvider.UnsupportedAsset.selector, unsupportedAsset));
         provider.getRate(unsupportedAsset);
     }
 }

@@ -7,9 +7,6 @@ import {Interaction} from "src/interfaces/Interaction.sol";
 import {ISlisBnbProvider} from "src/interfaces/ISlisBnbProvider.sol";
 import {ERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
-error UnSupportedAsset(address asset);
-error InsufficientSlisBnbReceived();
-
 /**
  * @title ClisBnbStrategy
  * @notice This contract takes slisBnb as the base asset and delegates to Lista to get clisBnb in Yieldnest's institutional wallet.
@@ -39,6 +36,9 @@ contract ClisBnbStrategy is BaseStrategy {
         IERC20 slisBnb;
     }
 
+    error UnsupportedAsset(address asset);
+    error InsufficientSlisBnbReceived();
+
     /**
      * @notice Initializes the vault with initial parameters
      * @param admin The address that will be granted the DEFAULT_ADMIN_ROLE
@@ -48,6 +48,9 @@ contract ClisBnbStrategy is BaseStrategy {
      * @param countNativeAsset_ Whether the strategy should count native assets in total assets
      * @param alwaysComputeTotalAssets_ Whether total assets should be computed on every call
      * @param slisBnb_ The address of the slisBnb token
+     * @param yieldNestMpcWallet_ The address of the Yieldnest's institutional wallet
+     * @param listaInteraction_ The address of the lista interaction contract
+     * @param slisBnbProvider_ The address of the slisBnb provider contract
      */
     function initialize(
         address admin,
@@ -56,9 +59,23 @@ contract ClisBnbStrategy is BaseStrategy {
         uint8 decimals_,
         bool countNativeAsset_,
         bool alwaysComputeTotalAssets_,
-        address slisBnb_
+        address slisBnb_,
+        address yieldNestMpcWallet_,
+        address listaInteraction_,
+        address slisBnbProvider_
     ) external virtual initializer {
-        _initialize(admin, name, symbol, decimals_, countNativeAsset_, alwaysComputeTotalAssets_, slisBnb_);
+        _initialize(
+            admin,
+            name,
+            symbol,
+            decimals_,
+            countNativeAsset_,
+            alwaysComputeTotalAssets_,
+            slisBnb_,
+            yieldNestMpcWallet_,
+            listaInteraction_,
+            slisBnbProvider_
+        );
     }
 
     /**
@@ -69,6 +86,10 @@ contract ClisBnbStrategy is BaseStrategy {
      * @param decimals_ The number of decimals for the vault token.
      * @param countNativeAsset_ Whether the vault should count the native asset.
      * @param alwaysComputeTotalAssets_ Whether the vault should always compute total assets.
+     * @param slisBnb_ The address of the slisBnb token
+     * @param yieldNestMpcWallet_ The address of the Yieldnest's institutional wallet
+     * @param listaInteraction_ The address of the lista interaction contract
+     * @param slisBnbProvider_ The address of the slisBnb provider contract
      */
     function _initialize(
         address admin,
@@ -77,7 +98,10 @@ contract ClisBnbStrategy is BaseStrategy {
         uint8 decimals_,
         bool countNativeAsset_,
         bool alwaysComputeTotalAssets_,
-        address slisBnb_
+        address slisBnb_,
+        address yieldNestMpcWallet_,
+        address listaInteraction_,
+        address slisBnbProvider_
     ) internal virtual {
         __ERC20_init(name, symbol);
         __AccessControl_init();
@@ -92,6 +116,9 @@ contract ClisBnbStrategy is BaseStrategy {
         _addAsset(slisBnb_, ERC20(slisBnb_).decimals(), true);
         _setAssetWithdrawable(slisBnb_, true);
         _strategyStorage().slisBnb = IERC20(slisBnb_);
+        _strategyStorage().yieldNestMpcWallet = yieldNestMpcWallet_;
+        _strategyStorage().listaInteraction = Interaction(listaInteraction_);
+        _strategyStorage().slisBnbProvider = ISlisBnbProvider(slisBnbProvider_);
     }
 
     /**
@@ -155,17 +182,16 @@ contract ClisBnbStrategy is BaseStrategy {
         uint256 shares,
         uint256 baseAssets
     ) internal virtual override {
-        // deposit is allowed only for the base asset(i.e. slisBnb for this strategy)
-        if (IERC20(asset_) != slisBnb()) {
-            revert UnSupportedAsset(asset_);
-        }
-
         // call the base strategy deposit function for accounting
         super._deposit(asset_, caller, receiver, assets, shares, baseAssets);
 
-        ISlisBnbProvider _slisBnbProvider = slisBnbProvider();
         // if sync deposit is enabled, deposit the slisBnb received from caller to Lista
         if (syncDeposit()) {
+            // deposit is allowed only for the base asset(i.e. slisBnb for this strategy)
+            if (IERC20(asset_) != slisBnb()) {
+                revert UnsupportedAsset(asset_);
+            }
+            ISlisBnbProvider _slisBnbProvider = slisBnbProvider();
             // increase allowance for the slisBnb provider contract
             SafeERC20.safeIncreaseAllowance(IERC20(asset_), address(_slisBnbProvider), assets);
             // provide the slisBnb to the slisBnb provider contract and yieldnest's institutional wallet set to recipient of clisBnb received
@@ -194,13 +220,9 @@ contract ClisBnbStrategy is BaseStrategy {
         if (!_getBaseStrategyStorage().isAssetWithdrawable[asset_]) {
             revert AssetNotWithdrawable();
         }
-        // withdraw is allowed only for the base asset(i.e. slisBnb for this strategy)
-        if (asset_ != asset()) {
-            revert UnSupportedAsset(asset_);
-        }
 
         // call the base strategy withdraw function for accounting
-        _subTotalAssets(assets);
+        _subTotalAssets(_convertAssetToBase(asset_, assets));
 
         if (caller != owner) {
             _spendAllowance(owner, caller, shares);
@@ -213,6 +235,10 @@ contract ClisBnbStrategy is BaseStrategy {
 
         // if the vault balance is less than the assets to withdraw, unstake the slisBnb
         if (vaultBalance < assets) {
+            // withdraw is allowed only for the base asset(i.e. slisBnb for this strategy)
+            if (asset_ != slisBnb()) {
+                revert UnsupportedAsset(asset_);
+            }
             uint256 amountToUnstake = assets - vaultBalance;
             // unstake the slisBnb
             slisBnbProvider().release(address(this), amountToUnstake);
@@ -263,35 +289,11 @@ contract ClisBnbStrategy is BaseStrategy {
     }
 
     /**
-     * @notice Sets the lista interaction contract address.
-     * @param _listaInteraction The address of the lista interaction contract.
-     */
-    function setListaInteraction(Interaction _listaInteraction) external onlyRole(LISTA_DEPENDENCY_MANAGER_ROLE) {
-        _strategyStorage().listaInteraction = _listaInteraction;
-    }
-
-    /**
-     * @notice Sets the slisBnb provider contract address.
-     * @param _slisBnbProvider The address of the slisBnb provider contract.
-     */
-    function setSlisBnbProvider(ISlisBnbProvider _slisBnbProvider) external onlyRole(LISTA_DEPENDENCY_MANAGER_ROLE) {
-        _strategyStorage().slisBnbProvider = _slisBnbProvider;
-    }
-
-    /**
      * @notice Sets the Yieldnest's institutional wallet address.
      * @param _yieldNestMpcWallet The address of the Yieldnest's institutional wallet.
      */
     function setYieldNestMpcWallet(address _yieldNestMpcWallet) external onlyRole(LISTA_DEPENDENCY_MANAGER_ROLE) {
         _strategyStorage().yieldNestMpcWallet = _yieldNestMpcWallet;
-    }
-
-    /**
-     * @notice Sets the slisBnb address.
-     * @param _slisBnb The address of the slisBnb.
-     */
-    function setSlisBnb(IERC20 _slisBnb) external onlyRole(LISTA_DEPENDENCY_MANAGER_ROLE) {
-        _strategyStorage().slisBnb = _slisBnb;
     }
 
     /**
