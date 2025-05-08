@@ -66,7 +66,6 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
     }
 
     function test_ynBNBx_deposit_to_clisBnbStrategy_SyncDeposit_Enabled(uint256 depositAmount) public {
-
         depositAmount = bound(depositAmount, 10000 wei, 1000000 ether);
 
         deal(address(wbnb), depositor, depositAmount);

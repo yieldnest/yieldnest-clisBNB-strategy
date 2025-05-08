@@ -7,7 +7,7 @@ import {ISlisBnbStakeManager} from "test/mainnet/mocks/MockYnBnbxProvider.sol";
 import {IProvider} from "lib/yieldnest-vault/src/interface/IProvider.sol";
 
 contract MockYnClisBnbStrategyRateProvider is IProvider {
-     error UnsupportedAsset(address asset);
+    error UnsupportedAsset(address asset);
 
     function getRate(address asset) external view returns (uint256) {
         // slisBnb is the base asset
@@ -21,6 +21,4 @@ contract MockYnClisBnbStrategyRateProvider is IProvider {
         }
         revert UnsupportedAsset(asset);
     }
-    
-    
 }

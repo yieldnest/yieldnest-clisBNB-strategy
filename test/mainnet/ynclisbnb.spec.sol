@@ -324,13 +324,11 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
     }
 
     function test_Vault_Deposit_NonAllocator_Reverts() public {
-        address nonAllocator = makeAddr("nonAllocator");    
+        address nonAllocator = makeAddr("nonAllocator");
         vm.startPrank(nonAllocator);
         vm.expectRevert(
             abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                nonAllocator,
-                clisBnbStrategy.ALLOCATOR_ROLE()
+                IAccessControl.AccessControlUnauthorizedAccount.selector, nonAllocator, clisBnbStrategy.ALLOCATOR_ROLE()
             )
         );
         clisBnbStrategy.deposit(1 ether, nonAllocator);
@@ -338,16 +336,9 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
     }
 
     function test_Vault_Withdraw_NonAllocator_Reverts() public {
-        address nonAllocator = makeAddr("nonAllocator");    
+        address nonAllocator = makeAddr("nonAllocator");
         vm.startPrank(nonAllocator);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IVault.ExceededMaxWithdraw.selector,
-                nonAllocator,
-                1 ether,
-                0
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(IVault.ExceededMaxWithdraw.selector, nonAllocator, 1 ether, 0));
         clisBnbStrategy.withdraw(1 ether, nonAllocator, nonAllocator);
         vm.stopPrank();
     }
@@ -528,7 +519,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
     function test_SetRateProvider() public {
         address newRateProvider = makeAddr("newRateProvider");
         vm.startPrank(ADMIN);
-        clisBnbStrategy.setProvider(newRateProvider);   
+        clisBnbStrategy.setProvider(newRateProvider);
         vm.stopPrank();
         assertEq(clisBnbStrategy.provider(), newRateProvider, "RateProvider should be set to newRateProvider");
     }
@@ -549,12 +540,30 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         uint256 shares = clisBnbStrategy.depositAsset(address(wbnb), depositAmount, depositor);
         vm.stopPrank();
 
-        uint256 amountOfSlisBnbDeposited = ISlisBnbStakeManager(MC.SLIS_BNB_STAKE_MANAGER).convertBnbToSnBnb(depositAmount);
+        uint256 amountOfSlisBnbDeposited =
+            ISlisBnbStakeManager(MC.SLIS_BNB_STAKE_MANAGER).convertBnbToSnBnb(depositAmount);
 
-        assertEq(wbnb.balanceOf(depositor), wbnbBalanceBeforeOfDepositor - depositAmount, "Wbnb balance of depositor should decrease by deposit amount");
-        assertApproxEqAbs(clisBnbStrategy.totalAssets(), totalAssetsBeforeOfClisBnbStrategy + amountOfSlisBnbDeposited, 1e6, "Total assets of clisBnbStrategy should increase by deposit amount");
-        assertEq(clisBnbStrategy.totalSupply(), totalSupplyBeforeOfClisBnbStrategy + shares, "Total supply of clisBnbStrategy should increase by shares");        
-        assertEq(wbnb.balanceOf(address(clisBnbStrategy)), wbnbBalanceBeforeOfClisBnbStrategy + depositAmount, "Wbnb balance of clisBnbStrategy should increase by deposit amount");
+        assertEq(
+            wbnb.balanceOf(depositor),
+            wbnbBalanceBeforeOfDepositor - depositAmount,
+            "Wbnb balance of depositor should decrease by deposit amount"
+        );
+        assertApproxEqAbs(
+            clisBnbStrategy.totalAssets(),
+            totalAssetsBeforeOfClisBnbStrategy + amountOfSlisBnbDeposited,
+            1e6,
+            "Total assets of clisBnbStrategy should increase by deposit amount"
+        );
+        assertEq(
+            clisBnbStrategy.totalSupply(),
+            totalSupplyBeforeOfClisBnbStrategy + shares,
+            "Total supply of clisBnbStrategy should increase by shares"
+        );
+        assertEq(
+            wbnb.balanceOf(address(clisBnbStrategy)),
+            wbnbBalanceBeforeOfClisBnbStrategy + depositAmount,
+            "Wbnb balance of clisBnbStrategy should increase by deposit amount"
+        );
     }
 
     function _addWBNBAsAssetToClisBnbStrategy() internal {
