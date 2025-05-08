@@ -15,6 +15,7 @@ import {ProvideRules} from "script/rules/ProvideRules.sol";
 // FOUNDRY_PROFILE=mainnet forge script DeployClisBnbStrategy
 contract DeployClisBnbStrategy is BaseScript {
     error InvalidRules();
+    error InvalidRateProvider();
 
     function symbol() public pure override returns (string memory) {
         return "ynClisBnb";
@@ -28,6 +29,12 @@ contract DeployClisBnbStrategy is BaseScript {
 
     function _verifySetup() public view override {
         super._verifySetup();
+
+        if (block.chainid == 56) {
+            if (address(rateProvider) == address(0)) {
+                revert InvalidRateProvider();
+            }
+        }
     }
 
     function run() public {
