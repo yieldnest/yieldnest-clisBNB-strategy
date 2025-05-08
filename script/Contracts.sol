@@ -1,6 +1,24 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.24;
 
+interface IContracts {
+    function SLIS_BNB_PROVIDER() external view returns (address);
+    function YIELDNEST_MPC_WALLET() external view returns (address);
+    function SLIS_BNB() external view returns (address);
+    function WBNB() external view returns (address);
+    function SLIS_BNB_STAKE_MANAGER() external view returns (address);
+    function INTERACTION() external view returns (address);
+    function YNBNBX() external view returns (address);
+    function AS_BNB_MINTER() external view returns (address);
+    function ASBNB() external view returns (address);
+    function YNBNBX_PROVIDER() external view returns (address);
+    function YNWBNBK() external view returns (address);
+    function YNBNBK() external view returns (address);
+    function YNCLISBNBK() external view returns (address);
+    function BNBX() external view returns (address);
+    function BNBX_STAKE_MANAGER() external view returns (address);
+}
+
 library MainnetContracts {
     address public constant SLIS_BNB_PROVIDER = 0xfD31e1C5e5571f8E7FE318f80888C1e6da97819b;
     address public constant YIELDNEST_MPC_WALLET = 0x24bcA21172B564474734Ae25900663BCC964d92b;
@@ -19,4 +37,66 @@ library MainnetContracts {
     address public constant YNCLISBNBK = 0x03276919F8b6eE37BA8EE4ee68a1c5f48b667834;
     address public constant BNBX = 0x1bdd3Cf7F79cfB8EdbB955f20ad99211551BA275;
     address public constant BNBX_STAKE_MANAGER = 0x3b961e83400D51e6E1AF5c450d3C7d7b80588d28;
+}
+
+contract BscContracts is IContracts {
+    function SLIS_BNB_PROVIDER() external pure returns (address) {
+        return MainnetContracts.SLIS_BNB_PROVIDER;
+    }
+
+    function YIELDNEST_MPC_WALLET() external pure returns (address) {
+        return MainnetContracts.YIELDNEST_MPC_WALLET;
+    }
+
+    function SLIS_BNB() external pure returns (address) {
+        return MainnetContracts.SLIS_BNB;
+    }
+
+    function WBNB() external pure returns (address) {
+        return MainnetContracts.WBNB;
+    }
+
+    function SLIS_BNB_STAKE_MANAGER() external pure returns (address) {
+        return MainnetContracts.SLIS_BNB_STAKE_MANAGER;
+    }
+
+    function INTERACTION() external pure returns (address) {
+        return MainnetContracts.INTERACTION;
+    }
+
+    function YNBNBX() external pure returns (address) {
+        return MainnetContracts.YNBNBX;
+    }
+
+    function AS_BNB_MINTER() external pure returns (address) {
+        return MainnetContracts.AS_BNB_MINTER;
+    }
+
+    function ASBNB() external pure returns (address) {
+        return MainnetContracts.ASBNB;
+    }
+
+    function YNBNBX_PROVIDER() external pure returns (address) {
+        return MainnetContracts.YNBNBX_PROVIDER;
+    }
+
+    function YNWBNBK() external pure returns (address) {
+        return MainnetContracts.YNWBNBK;
+    }
+
+    function YNBNBK() external pure returns (address) {
+        return MainnetContracts.YNBNBK;
+    }
+
+    function YNCLISBNBK() external pure returns (address) {
+        return MainnetContracts.YNCLISBNBK;
+    }
+
+    function BNBX() external pure returns (address) {
+        return MainnetContracts.BNBX;
+    }
+
+    function BNBX_STAKE_MANAGER() external pure returns (address) {
+        return MainnetContracts.BNBX_STAKE_MANAGER;
+    }
 }
