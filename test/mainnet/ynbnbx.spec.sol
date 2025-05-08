@@ -66,7 +66,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
     }
 
     function test_ynBNBx_deposit_to_clisBnbStrategy_SyncDeposit_Enabled(uint256 depositAmount) public {
-        address depositor = makeAddr("depositor");
+
         depositAmount = bound(depositAmount, 10000 wei, 1000000 ether);
 
         deal(address(wbnb), depositor, depositAmount);
@@ -172,7 +172,6 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         clisBnbStrategy.setSyncDeposit(false);
         vm.stopPrank();
 
-        address depositor = makeAddr("depositor");
         depositAmount = bound(depositAmount, 10000 wei, 1000000 ether);
 
         deal(address(wbnb), depositor, depositAmount);
