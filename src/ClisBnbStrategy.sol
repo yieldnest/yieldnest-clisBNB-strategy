@@ -19,9 +19,6 @@ contract ClisBnbStrategy is BaseStrategy {
     /// @notice Role for lista dependency manager permissions
     bytes32 public constant LISTA_DEPENDENCY_MANAGER_ROLE = keccak256("LISTA_DEPENDENCY_MANAGER_ROLE");
 
-    /// @notice Role for keeper permissions
-    bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
-
     /// @notice Storage structure for strategy-specific parameters
     struct StrategyStorage {
         // lista interaction contract used to get locked slisBnb by this strategy
