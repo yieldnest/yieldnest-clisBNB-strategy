@@ -12,7 +12,7 @@ import {BaseRules} from "lib/yieldnest-vault/script/rules/BaseRules.sol";
 import {SafeRules} from "lib/yieldnest-vault/script/rules/SafeRules.sol";
 import {ProvideRules} from "script/rules/ProvideRules.sol";
 
-// FOUNDRY_PROFILE=mainnet forge script DeployClisBnbStrategy
+// FOUNDRY_PROFILE=mainnet forge script DeployClisBnbStrategy --slow
 contract DeployClisBnbStrategy is BaseScript {
     error InvalidRules();
     error InvalidRateProvider();
