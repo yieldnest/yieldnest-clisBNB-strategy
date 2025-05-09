@@ -58,7 +58,7 @@ contract DeployClisBnbStrategy is BaseScript {
 
         address admin = msg.sender;
 
-        string memory name = "ynClisBnb Strategy";
+        string memory name = "YieldNest ClisBnb Strategy";
         string memory symbol_ = "ynClisBnb";
         uint8 decimals = 18;
 
