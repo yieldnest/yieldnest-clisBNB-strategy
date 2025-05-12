@@ -33,18 +33,21 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         clisBnbStrategy = ClisBnbStrategy(
             payable(address(new TransparentUpgradeableProxy(address(clisBnbStrategyImplementation), ADMIN, "")))
         );
-        clisBnbStrategy.initialize(
-            ADMIN,
-            "YieldNest ClisBnB strategy",
-            "ynClisBnb",
-            18,
-            false,
-            true,
-            MC.SLIS_BNB,
-            MC.YIELDNEST_MPC_WALLET,
-            MC.INTERACTION,
-            MC.SLIS_BNB_PROVIDER
-        );
+        ClisBnbStrategy.Init memory init = ClisBnbStrategy.Init({
+            admin: ADMIN,
+            name: "YieldNest ClisBnB strategy",
+            symbol: "ynClisBnb",
+            decimals: 18,
+            paused: true,
+            countNativeAsset: false,
+            alwaysComputeTotalAssets: true,
+            defaultAssetIndex: 0,
+            slisBnb: MC.SLIS_BNB,
+            yieldNestMpcWallet: MC.YIELDNEST_MPC_WALLET,
+            listaInteraction: MC.INTERACTION,
+            slisBnbProvider: MC.SLIS_BNB_PROVIDER
+        });
+        clisBnbStrategy.initialize(init);
         clisBnbStrategyRateProvider = new ClisBnbStrategyRateProvider();
 
         interaction = Interaction(MC.INTERACTION);

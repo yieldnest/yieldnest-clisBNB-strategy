@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {IERC20, Math, SafeERC20} from "lib/yieldnest-vault/src/Common.sol";
 import {BaseStrategy} from "lib/yieldnest-vault/src/strategy/BaseStrategy.sol";
+import {BaseVault} from "lib/yieldnest-vault/src/BaseVault.sol";
 import {Interaction} from "src/interfaces/Interaction.sol";
 import {ISlisBnbProvider} from "src/interfaces/ISlisBnbProvider.sol";
 import {ERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
@@ -33,89 +34,57 @@ contract ClisBnbStrategy is BaseStrategy {
         IERC20 slisBnb;
     }
 
+    struct Init {
+        // admin address
+        address admin;
+        // name of the strategy
+        string name;
+        // symbol of the strategy
+        string symbol;
+        // number of decimals for the strategy
+        uint8 decimals;
+        // whether the strategy is paused during initialization
+        bool paused;
+        // whether the strategy should count native assets in total assets
+        bool countNativeAsset;
+        // whether the strategy should always compute total assets
+        bool alwaysComputeTotalAssets;
+        // default asset index
+        uint256 defaultAssetIndex;
+        // address of the slisBnb token
+        address slisBnb;
+        // address of the Yieldnest's institutional wallet
+        address yieldNestMpcWallet;
+        // address of the lista interaction contract
+        address listaInteraction;
+        // address of the slisBnb provider contract
+        address slisBnbProvider;
+    }
+
     error UnsupportedAsset(address asset);
     error InsufficientSlisBnbReceived();
 
     /**
      * @notice Initializes the vault with initial parameters
-     * @param admin The address that will be granted the DEFAULT_ADMIN_ROLE
-     * @param name The name of the strategy
-     * @param symbol The symbol of the strategy
-     * @param decimals_ The number of decimals for the strategy
-     * @param countNativeAsset_ Whether the strategy should count native assets in total assets
-     * @param alwaysComputeTotalAssets_ Whether total assets should be computed on every call
-     * @param slisBnb_ The address of the slisBnb token
-     * @param yieldNestMpcWallet_ The address of the Yieldnest's institutional wallet
-     * @param listaInteraction_ The address of the lista interaction contract
-     * @param slisBnbProvider_ The address of the slisBnb provider contract
+     * @param init The initial parameters for the vault
      */
-    function initialize(
-        address admin,
-        string memory name,
-        string memory symbol,
-        uint8 decimals_,
-        bool countNativeAsset_,
-        bool alwaysComputeTotalAssets_,
-        address slisBnb_,
-        address yieldNestMpcWallet_,
-        address listaInteraction_,
-        address slisBnbProvider_
-    ) external virtual initializer {
-        _initialize(
-            admin,
-            name,
-            symbol,
-            decimals_,
-            countNativeAsset_,
-            alwaysComputeTotalAssets_,
-            slisBnb_,
-            yieldNestMpcWallet_,
-            listaInteraction_,
-            slisBnbProvider_
+    function initialize(Init memory init) external virtual initializer {
+        BaseVault._initialize(
+            init.admin,
+            init.name,
+            init.symbol,
+            init.decimals,
+            init.paused,
+            init.countNativeAsset,
+            init.alwaysComputeTotalAssets,
+            init.defaultAssetIndex
         );
-    }
-
-    /**
-     * @notice Internal function to initialize the vault.
-     * @param admin The address of the admin.
-     * @param name The name of the vault.
-     * @param symbol The symbol of the vault.
-     * @param decimals_ The number of decimals for the vault token.
-     * @param countNativeAsset_ Whether the vault should count the native asset.
-     * @param alwaysComputeTotalAssets_ Whether the vault should always compute total assets.
-     * @param slisBnb_ The address of the slisBnb token
-     * @param yieldNestMpcWallet_ The address of the Yieldnest's institutional wallet
-     * @param listaInteraction_ The address of the lista interaction contract
-     * @param slisBnbProvider_ The address of the slisBnb provider contract
-     */
-    function _initialize(
-        address admin,
-        string memory name,
-        string memory symbol,
-        uint8 decimals_,
-        bool countNativeAsset_,
-        bool alwaysComputeTotalAssets_,
-        address slisBnb_,
-        address yieldNestMpcWallet_,
-        address listaInteraction_,
-        address slisBnbProvider_
-    ) internal virtual {
-        __ERC20_init(name, symbol);
-        __AccessControl_init();
-        __ReentrancyGuard_init();
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-
-        VaultStorage storage vaultStorage = _getVaultStorage();
-        vaultStorage.paused = true;
-        vaultStorage.decimals = decimals_;
-        vaultStorage.countNativeAsset = countNativeAsset_;
-        vaultStorage.alwaysComputeTotalAssets = alwaysComputeTotalAssets_;
-        _addAsset(slisBnb_, ERC20(slisBnb_).decimals(), true);
-        _setAssetWithdrawable(slisBnb_, true);
-        _strategyStorage().slisBnb = IERC20(slisBnb_);
-        _strategyStorage().yieldNestMpcWallet = yieldNestMpcWallet_;
-        _strategyStorage().listaInteraction = Interaction(listaInteraction_);
-        _strategyStorage().slisBnbProvider = ISlisBnbProvider(slisBnbProvider_);
+        _addAsset(init.slisBnb, ERC20(init.slisBnb).decimals(), true);
+        _setAssetWithdrawable(init.slisBnb, true);
+        _strategyStorage().slisBnb = IERC20(init.slisBnb);
+        _strategyStorage().yieldNestMpcWallet = init.yieldNestMpcWallet;
+        _strategyStorage().listaInteraction = Interaction(init.listaInteraction);
+        _strategyStorage().slisBnbProvider = ISlisBnbProvider(init.slisBnbProvider);
     }
 
     /**

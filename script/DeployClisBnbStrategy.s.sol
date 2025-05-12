@@ -73,19 +73,22 @@ contract DeployClisBnbStrategy is BaseScript {
             new TransparentUpgradeableProxy(address(clisBnbStrategyImplementation), address(timelock), "");
 
         clisBnbStrategy = ClisBnbStrategy(payable(address(proxy)));
+        ClisBnbStrategy.Init memory init = ClisBnbStrategy.Init({
+            admin: admin,
+            name: name,
+            symbol: symbol_,
+            decimals: decimals,
+            paused: true,
+            countNativeAsset: countNativeAsset,
+            alwaysComputeTotalAssets: alwaysComputeTotalAssets,
+            defaultAssetIndex: 0,
+            slisBnb: contracts.SLIS_BNB(),
+            yieldNestMpcWallet: contracts.YIELDNEST_MPC_WALLET(),
+            listaInteraction: contracts.INTERACTION(),
+            slisBnbProvider: contracts.SLIS_BNB_PROVIDER()
+        });
 
-        clisBnbStrategy.initialize(
-            admin,
-            name,
-            symbol_,
-            decimals,
-            countNativeAsset,
-            alwaysComputeTotalAssets,
-            contracts.SLIS_BNB(),
-            contracts.YIELDNEST_MPC_WALLET(),
-            contracts.INTERACTION(),
-            contracts.SLIS_BNB_PROVIDER()
-        );
+        clisBnbStrategy.initialize(init);
 
         configureStrategy();
     }
