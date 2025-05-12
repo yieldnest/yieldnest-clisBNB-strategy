@@ -4,8 +4,8 @@ pragma solidity ^0.8.24;
 import {Script, stdJson} from "lib/forge-std/src/Script.sol";
 
 import {IProvider} from "lib/yieldnest-vault/src/interface/IProvider.sol";
-import {IActors, MainnetActors} from "script/Actors.sol";
-import {BscContracts, IContracts} from "script/Contracts.sol";
+import {IActors, MainnetActors, TestnetActors} from "script/Actors.sol";
+import {BscContracts, ChapelContracts, IContracts} from "script/Contracts.sol";
 
 import {TransparentUpgradeableProxy} from
     "lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
@@ -46,11 +46,17 @@ abstract contract BaseScript is Script {
             MainnetActors _actors = new MainnetActors();
             actors = IActors(_actors);
             contracts = IContracts(new BscContracts());
-        }
+        } 
+        if (block.chainid == 97) {
+            minDelay = 10 seconds;
+            TestnetActors _actors = new TestnetActors();
+            actors = IActors(_actors);
+            contracts = IContracts(new ChapelContracts());
+        } 
     }
 
     function _verifySetup() public view virtual {
-        if (block.chainid != 56) {
+        if (block.chainid != 56 && block.chainid != 97) {
             revert UnsupportedChain();
         }
         if (

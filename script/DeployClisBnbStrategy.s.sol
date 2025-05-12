@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {ClisBnbStrategyRateProvider} from "src/module/ClisBnbStrategyRateProvider.sol";
+import {TestnetClisBnbStrategyRateProvider} from "src/module/TestnetClisBnbStrategyRateProvider.sol";
 import {ClisBnbStrategy} from "src/ClisBnbStrategy.sol";
 import {BaseScript} from "script/BaseScript.sol";
 import {IProvider} from "lib/yieldnest-vault/src/interface/IProvider.sol";
@@ -25,12 +26,15 @@ contract DeployClisBnbStrategy is BaseScript {
         if (block.chainid == 56) {
             rateProvider = IProvider(address(new ClisBnbStrategyRateProvider()));
         }
+        if (block.chainid == 97) {
+            rateProvider = IProvider(address(new TestnetClisBnbStrategyRateProvider()));
+        }
     }
 
     function _verifySetup() public view override {
         super._verifySetup();
 
-        if (block.chainid == 56) {
+        if (block.chainid == 56 || block.chainid == 97) {
             if (address(rateProvider) == address(0)) {
                 revert InvalidRateProvider();
             }

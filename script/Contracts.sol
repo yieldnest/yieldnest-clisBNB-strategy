@@ -39,6 +39,25 @@ library MainnetContracts {
     address public constant BNBX_STAKE_MANAGER = 0x3b961e83400D51e6E1AF5c450d3C7d7b80588d28;
 }
 
+library TestnetContracts {
+    address public constant SLIS_BNB = 0xCc752dC4ae72386986d011c2B485be0DAd98C744;
+    address public constant CLIS_BNB = 0x3dC5a40119B85d5f2b06eEC86a6d36852bd9aB52;
+    address public constant SLIS_BNB_PROVIDER = 0x11f6aDcb73473FD7bdd15f32df65Fa3ECdD0Bc20;
+    address public constant INTERACTION = 0x70C4880A3f022b32810a4E9B9F26218Ec026f279;
+    address public constant WBNB = 0x2F472b32b8041E51e53EeC52e87c7060EA9C7eE8;
+    address public constant YIELDNEST_MPC_WALLET = 0x24bcA21172B564474734Ae25900663BCC964d92b;
+    address public constant SLIS_BNB_STAKE_MANAGER = 0xc695F964011a5a1024931E2AF0116afBaC41B31B;
+    address public constant YNBNBX = 0x0000000000000000000000000000000000000000;
+    address public constant AS_BNB_MINTER = 0x0000000000000000000000000000000000000000;
+    address public constant ASBNB = 0x0000000000000000000000000000000000000000;
+    address public constant YNBNBX_PROVIDER = 0x0000000000000000000000000000000000000000;
+    address public constant YNWBNBK = 0x0000000000000000000000000000000000000000;
+    address public constant YNBNBK = 0x0000000000000000000000000000000000000000;
+    address public constant YNCLISBNBK = 0x0000000000000000000000000000000000000000;
+    address public constant BNBX = 0x0000000000000000000000000000000000000000;
+    address public constant BNBX_STAKE_MANAGER = 0x0000000000000000000000000000000000000000;
+}
+
 contract BscContracts is IContracts {
     function SLIS_BNB_PROVIDER() external pure returns (address) {
         return MainnetContracts.SLIS_BNB_PROVIDER;
@@ -98,5 +117,53 @@ contract BscContracts is IContracts {
 
     function BNBX_STAKE_MANAGER() external pure returns (address) {
         return MainnetContracts.BNBX_STAKE_MANAGER;
+    }
+}
+
+contract ChapelContracts is IContracts {
+     function SLIS_BNB_PROVIDER() external pure returns (address) {
+        return TestnetContracts.SLIS_BNB_PROVIDER;
+     }
+    function YIELDNEST_MPC_WALLET() external pure returns (address) {
+        return TestnetContracts.YIELDNEST_MPC_WALLET;
+    }
+    function SLIS_BNB() external pure returns (address) {
+        return TestnetContracts.SLIS_BNB;
+    }
+    function WBNB() external pure returns (address) {
+        return TestnetContracts.WBNB;
+    }
+    function SLIS_BNB_STAKE_MANAGER() external pure returns (address) {
+        return TestnetContracts.SLIS_BNB_STAKE_MANAGER;
+    }
+    function INTERACTION() external pure returns (address) {
+        return TestnetContracts.INTERACTION;
+    }
+    function YNBNBX() external pure returns (address) {
+        return TestnetContracts.YNBNBX;
+    }
+    function AS_BNB_MINTER() external pure returns (address) {
+        return TestnetContracts.AS_BNB_MINTER;
+    }
+    function ASBNB() external pure returns (address) {
+        return TestnetContracts.ASBNB;
+    }
+    function YNBNBX_PROVIDER() external pure returns (address) {
+        return TestnetContracts.YNBNBX_PROVIDER;
+    }
+    function YNWBNBK() external pure returns (address) {
+        return TestnetContracts.YNWBNBK;
+    }
+    function YNBNBK() external pure returns (address) {
+        return TestnetContracts.YNBNBK;
+    }
+    function BNBX() external pure returns (address) {
+        return TestnetContracts.BNBX;
+    }
+    function BNBX_STAKE_MANAGER() external pure returns (address) {
+        return TestnetContracts.BNBX_STAKE_MANAGER;
+    }
+    function YNCLISBNBK() external pure returns (address) {
+        return TestnetContracts.YNCLISBNBK;
     }
 }
