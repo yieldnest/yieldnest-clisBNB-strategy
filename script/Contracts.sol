@@ -121,48 +121,62 @@ contract BscContracts is IContracts {
 }
 
 contract ChapelContracts is IContracts {
-     function SLIS_BNB_PROVIDER() external pure returns (address) {
+    function SLIS_BNB_PROVIDER() external pure returns (address) {
         return TestnetContracts.SLIS_BNB_PROVIDER;
-     }
+    }
+
     function YIELDNEST_MPC_WALLET() external pure returns (address) {
         return TestnetContracts.YIELDNEST_MPC_WALLET;
     }
+
     function SLIS_BNB() external pure returns (address) {
         return TestnetContracts.SLIS_BNB;
     }
+
     function WBNB() external pure returns (address) {
         return TestnetContracts.WBNB;
     }
+
     function SLIS_BNB_STAKE_MANAGER() external pure returns (address) {
         return TestnetContracts.SLIS_BNB_STAKE_MANAGER;
     }
+
     function INTERACTION() external pure returns (address) {
         return TestnetContracts.INTERACTION;
     }
+
     function YNBNBX() external pure returns (address) {
         return TestnetContracts.YNBNBX;
     }
+
     function AS_BNB_MINTER() external pure returns (address) {
         return TestnetContracts.AS_BNB_MINTER;
     }
+
     function ASBNB() external pure returns (address) {
         return TestnetContracts.ASBNB;
     }
+
     function YNBNBX_PROVIDER() external pure returns (address) {
         return TestnetContracts.YNBNBX_PROVIDER;
     }
+
     function YNWBNBK() external pure returns (address) {
         return TestnetContracts.YNWBNBK;
     }
+
     function YNBNBK() external pure returns (address) {
         return TestnetContracts.YNBNBK;
     }
+
     function BNBX() external pure returns (address) {
         return TestnetContracts.BNBX;
     }
+
     function BNBX_STAKE_MANAGER() external pure returns (address) {
         return TestnetContracts.BNBX_STAKE_MANAGER;
     }
+
     function YNCLISBNBK() external pure returns (address) {
         return TestnetContracts.YNCLISBNBK;
     }

@@ -46,13 +46,13 @@ abstract contract BaseScript is Script {
             MainnetActors _actors = new MainnetActors();
             actors = IActors(_actors);
             contracts = IContracts(new BscContracts());
-        } 
+        }
         if (block.chainid == 97) {
             minDelay = 10 seconds;
             TestnetActors _actors = new TestnetActors();
             actors = IActors(_actors);
             contracts = IContracts(new ChapelContracts());
-        } 
+        }
     }
 
     function _verifySetup() public view virtual {
