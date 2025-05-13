@@ -13,9 +13,9 @@ library BaseRoles {
         clisBnbStrategy.grantRole(clisBnbStrategy.UNPAUSER_ROLE(), actors.UNPAUSER());
         clisBnbStrategy.grantRole(clisBnbStrategy.DEPOSIT_MANAGER_ROLE(), actors.DEPOSIT_MANAGER());
         clisBnbStrategy.grantRole(clisBnbStrategy.LISTA_DEPENDENCY_MANAGER_ROLE(), actors.LISTA_DEPENDENCY_MANAGER());
-        clisBnbStrategy.grantRole(clisBnbStrategy.PROVIDER_MANAGER_ROLE(), actors.PROVIDER_MANAGER());
 
         // set timelock roles
+        clisBnbStrategy.grantRole(clisBnbStrategy.PROVIDER_MANAGER_ROLE(), timelock);
         clisBnbStrategy.grantRole(clisBnbStrategy.ASSET_MANAGER_ROLE(), timelock);
         clisBnbStrategy.grantRole(clisBnbStrategy.BUFFER_MANAGER_ROLE(), timelock);
         clisBnbStrategy.grantRole(clisBnbStrategy.PROCESSOR_MANAGER_ROLE(), timelock);
