@@ -47,5 +47,3 @@ eth_mainnet = "${BNB_MAINNET_RPC_URL}"
 eth_testnet = "${BNB_TESTNET_RPC_URL}"
 
 [etherscan]
-eth_mainnet = { key = "${ETH_MAINNET_ETHERSCAN_KEY}", chain = 56 }
-eth_testnet = { key = "${ETH_TESTNET_ETHERSCAN_KEY}", chain = 97 }
