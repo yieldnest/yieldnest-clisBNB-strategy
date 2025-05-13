@@ -9,6 +9,7 @@ import {IValidator} from "lib/yieldnest-vault/src/interface/IValidator.sol";
 import {SafeRules} from "lib/yieldnest-vault/script/rules/SafeRules.sol";
 import {Test} from "forge-std/Test.sol";
 import {RolesVerification} from "./RolesVerification.sol";
+import {Ownable} from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
 // FOUNDRY_PROFILE=mainnet forge script VerifyClisBnbStrategy
 contract VerifyClisBnbStrategy is BaseScript, Test {
@@ -73,6 +74,23 @@ contract VerifyClisBnbStrategy is BaseScript, Test {
 
         RolesVerification.verifyDefaultRoles(clisBnbStrategy, timelock, actors);
         RolesVerification.verifyTemporaryRoles(clisBnbStrategy, deployer);
+        RolesVerification.verifyRole(
+            timelock,
+            actors.YnSecurityCouncil(),
+            timelock.PROPOSER_ROLE(),
+            true,
+            "proposer role for timelock is YnSecurityCouncil"
+        );
+        RolesVerification.verifyRole(
+            timelock,
+            actors.YnSecurityCouncil(),
+            timelock.EXECUTOR_ROLE(),
+            true,
+            "executor role for timelock is YnSecurityCouncil"
+        );
+
+        assertGe(timelock.getMinDelay(), minDelay, "min delay is invalid");
+        assertEq(Ownable(clisBnbStrategyProxyAdmin).owner(), address(timelock), "proxy admin owner is invalid");
     }
 
     function _verifyApprovalRule(IVault clisBnbStrategy, address contractAddress, address[] memory allowList)

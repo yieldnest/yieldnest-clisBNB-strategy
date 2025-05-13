@@ -3,6 +3,7 @@
 pragma solidity ^0.8.24;
 
 interface IActors {
+    function YnSecurityCouncil() external view returns (address);
     function PROCESSOR_MANAGER() external view returns (address);
     function ASSET_MANAGER() external view returns (address);
     function LISTA_DEPENDENCY_MANAGER() external view returns (address);
