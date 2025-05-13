@@ -90,7 +90,6 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
 
         SafeRules.setProcessorRules(clisBnbStrategy, rules, false);
 
-
         clisBnbStrategy.unpause();
 
         clisBnbStrategy.processAccounting();
@@ -387,7 +386,9 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             slisBnbBalanceOfDepositorBefore + withdrawAmount,
             "SlisBnb balance of depositor should increase by withdraw amount"
         );
-        assertEq(clisBnbStrategy.balanceOf(depositor), shares - sharesWithdrawn, "Share balance of depositor should be 0");
+        assertEq(
+            clisBnbStrategy.balanceOf(depositor), shares - sharesWithdrawn, "Share balance of depositor should be 0"
+        );
         assertEq(
             _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy)),
             stakedSlisBnbBalanceOfVaultBefore - withdrawAmount,
@@ -482,7 +483,11 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         );
     }
 
-    function test_Withdraw_After_Reward_Stream_Allocation(uint256 depositAmount, uint256 rewardAmount, uint256 redeemAmount) public {
+    function test_Withdraw_After_Reward_Stream_Allocation(
+        uint256 depositAmount,
+        uint256 rewardAmount,
+        uint256 redeemAmount
+    ) public {
         depositAmount = bound(depositAmount, 1000 wei, 1000000 ether);
         rewardAmount = bound(rewardAmount, 0.1 ether, 1000000 ether);
 
@@ -502,13 +507,30 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
 
         vm.startPrank(depositor);
         uint256 assetsWithdrawn = clisBnbStrategy.redeem(redeemAmount, depositor, depositor);
-        assertEq(clisBnbStrategy.balanceOf(depositor), clisBnbStrategyBalanceOfDepositorBefore - redeemAmount, "Share balance of depositor should decrease by redeem amount");
-        assertEq(slisBnb.balanceOf(depositor), slisBnbBalanceOfDepositorBefore + assetsWithdrawn, "SlisBnb balance of depositor should increase by assets withdrawn");
-        assertEq(clisBnbStrategy.totalAssets(), totalAssetsOfClisBnbStrategyBefore - assetsWithdrawn, "Total assets of clisBnbStrategy should decrease by redeem amount");
-        assertEq(clisBnbStrategy.totalSupply(), totalSupplyOfClisBnbStrategyBefore - redeemAmount, "Total supply of clisBnbStrategy should decrease by redeem amount");
+        assertEq(
+            clisBnbStrategy.balanceOf(depositor),
+            clisBnbStrategyBalanceOfDepositorBefore - redeemAmount,
+            "Share balance of depositor should decrease by redeem amount"
+        );
+        assertEq(
+            slisBnb.balanceOf(depositor),
+            slisBnbBalanceOfDepositorBefore + assetsWithdrawn,
+            "SlisBnb balance of depositor should increase by assets withdrawn"
+        );
+        assertEq(
+            clisBnbStrategy.totalAssets(),
+            totalAssetsOfClisBnbStrategyBefore - assetsWithdrawn,
+            "Total assets of clisBnbStrategy should decrease by redeem amount"
+        );
+        assertEq(
+            clisBnbStrategy.totalSupply(),
+            totalSupplyOfClisBnbStrategyBefore - redeemAmount,
+            "Total supply of clisBnbStrategy should decrease by redeem amount"
+        );
         assertEq(
             _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy)),
-            slisBnbLockedInVaultBefore - assetsWithdrawn, "Staked slisBnb balance of vault should decrease by withdraw amount"
+            slisBnbLockedInVaultBefore - assetsWithdrawn,
+            "Staked slisBnb balance of vault should decrease by withdraw amount"
         );
         assertLt(
             clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET),
