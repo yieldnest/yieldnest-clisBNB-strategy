@@ -16,6 +16,10 @@ import {IVault} from "lib/yieldnest-vault/src/interface/IVault.sol";
 import {IValidator} from "lib/yieldnest-vault/src/interface/IValidator.sol";
 import {MockYnClisBnbStrategyRateProvider} from "test/mainnet/mocks/MockYnClisBnbStrategyRateProvider.sol";
 import {ISlisBnbStakeManager} from "test/mainnet/mocks/MockYnBnbxProvider.sol";
+import {BaseRoles} from "script/roles/BaseRoles.sol";
+import {BaseRules} from "lib/yieldnest-vault/script/rules/BaseRules.sol";
+import {SafeRules} from "lib/yieldnest-vault/script/rules/SafeRules.sol";
+import {ProvideRules} from "script/rules/ProvideRules.sol";
 import {console} from "lib/forge-std/src/console.sol";
 
 contract YnClisBnbStrategyTest is Test, MainnetActors {
@@ -27,14 +31,20 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
     IERC20 public clisBnb;
     Interaction public interaction;
     address public depositor = makeAddr("depositor");
+    address public timelock = makeAddr("timelock");
+    MainnetActors public actors;
+
+    error InvalidRules();
 
     function setUp() public virtual {
+        actors = new MainnetActors();
         ClisBnbStrategy clisBnbStrategyImplementation = new ClisBnbStrategy();
         clisBnbStrategy = ClisBnbStrategy(
-            payable(address(new TransparentUpgradeableProxy(address(clisBnbStrategyImplementation), ADMIN, "")))
+            payable(address(new TransparentUpgradeableProxy(address(clisBnbStrategyImplementation), timelock, "")))
         );
+        address deployer = makeAddr("deployer");
         ClisBnbStrategy.Init memory init = ClisBnbStrategy.Init({
-            admin: ADMIN,
+            admin: deployer,
             name: "YieldNest ClisBnB strategy",
             symbol: "ynClisBnb",
             decimals: 18,
@@ -56,43 +66,37 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         slisBnb = IERC20(MC.SLIS_BNB);
         clisBnb = IERC20(MC.CLIS_BNB);
 
-        vm.startPrank(ADMIN);
-        clisBnbStrategy.grantRole(clisBnbStrategy.PROCESSOR_ROLE(), PROCESSOR);
-        clisBnbStrategy.grantRole(clisBnbStrategy.PROVIDER_MANAGER_ROLE(), PROVIDER_MANAGER);
-        clisBnbStrategy.grantRole(clisBnbStrategy.ASSET_MANAGER_ROLE(), ASSET_MANAGER);
-        clisBnbStrategy.grantRole(clisBnbStrategy.PROCESSOR_MANAGER_ROLE(), PROCESSOR_MANAGER);
-        clisBnbStrategy.grantRole(clisBnbStrategy.PAUSER_ROLE(), PAUSER);
-        clisBnbStrategy.grantRole(clisBnbStrategy.UNPAUSER_ROLE(), UNPAUSER);
-        clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_MANAGER_ROLE(), ALLOCATOR_MANAGER);
-
-        clisBnbStrategy.grantRole(clisBnbStrategy.DEPOSIT_MANAGER_ROLE(), ADMIN);
-        clisBnbStrategy.grantRole(clisBnbStrategy.LISTA_DEPENDENCY_MANAGER_ROLE(), ADMIN);
+        vm.startPrank(deployer);
+        BaseRoles.configureDefaultRoles(clisBnbStrategy, timelock, actors);
+        BaseRoles.configureTemporaryRolesStrategy(clisBnbStrategy, deployer);
 
         clisBnbStrategy.setProvider(address(clisBnbStrategyRateProvider));
         clisBnbStrategy.setSyncDeposit(true);
-
-        clisBnbStrategy.unpause();
         clisBnbStrategy.setHasAllocator(true);
         clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_ROLE(), MC.YNBNBX);
         clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_ROLE(), depositor);
 
-        vm.stopPrank();
+        uint256 rulesLength = 2;
+        uint256 i = 0;
 
-        {
-            IVault.FunctionRule memory rule = IVault.FunctionRule({
-                isActive: true,
-                paramRules: new IVault.ParamRule[](0),
-                validator: IValidator(address(0))
-            });
+        SafeRules.RuleParams[] memory rules = new SafeRules.RuleParams[](rulesLength);
 
-            // add rule for processor
-            vm.startPrank(PROCESSOR_MANAGER);
-            clisBnbStrategy.setProcessorRule(address(MC.SLIS_BNB), IERC20.approve.selector, rule);
-            clisBnbStrategy.setProcessorRule(address(MC.SLIS_BNB_PROVIDER), ISlisBnbProvider.provide.selector, rule);
-            vm.stopPrank();
+        rules[i++] = BaseRules.getApprovalRule(MC.SLIS_BNB, MC.SLIS_BNB_PROVIDER);
+        rules[i++] = ProvideRules.getProvideRule(MC.SLIS_BNB_PROVIDER, MC.YIELDNEST_MPC_WALLET);
+
+        if (i != rulesLength) {
+            revert InvalidRules();
         }
 
+        SafeRules.setProcessorRules(clisBnbStrategy, rules, false);
+
+
+        clisBnbStrategy.unpause();
+
         clisBnbStrategy.processAccounting();
+
+        BaseRoles.renounceTemporaryRolesStrategy(clisBnbStrategy, deployer);
+        vm.stopPrank();
     }
 
     function test_Vault_ERC20_view_functions() public view {
@@ -570,9 +574,11 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
     }
 
     function _addWBNBAsAssetToClisBnbStrategy() internal {
-        vm.startPrank(ADMIN);
+        vm.startPrank(timelock);
         clisBnbStrategy.addAsset(address(wbnb), true);
         MockYnClisBnbStrategyRateProvider newProvider = new MockYnClisBnbStrategyRateProvider();
+        vm.stopPrank();
+        vm.startPrank(ADMIN);
         clisBnbStrategy.setProvider(address(newProvider));
         vm.stopPrank();
     }
