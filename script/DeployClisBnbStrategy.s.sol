@@ -105,6 +105,7 @@ contract DeployClisBnbStrategy is BaseScript {
         clisBnbStrategy.setHasAllocator(true);
         // grant allocator role
         clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_ROLE(), contracts.YNBNBX());
+        clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_ROLE(), actors.Bootstrapper());
 
         uint256 rulesLength = 2;
         uint256 i = 0;

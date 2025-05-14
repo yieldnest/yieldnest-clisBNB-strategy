@@ -20,6 +20,7 @@ interface IActors {
     function PROPOSER_1() external view returns (address);
     function EXECUTOR_1() external view returns (address);
     function YNBNBX() external view returns (address);
+    function Bootstrapper() external view returns (address);
 }
 
 contract MainnetActors is IActors {
@@ -41,6 +42,7 @@ contract MainnetActors is IActors {
     address public constant PROPOSER_1 = YnSecurityCouncil;
     address public constant EXECUTOR_1 = YnSecurityCouncil;
     address public constant YNBNBX = 0x32C830f5c34122C6afB8aE87ABA541B7900a2C5F;
+    address public constant Bootstrapper = YnSecurityCouncil;
 }
 
 contract TestnetActors is IActors {
@@ -63,4 +65,5 @@ contract TestnetActors is IActors {
     address public constant PROPOSER_1 = YnSecurityCouncil;
     address public constant EXECUTOR_1 = YnSecurityCouncil;
     address public constant YNBNBX = 0x0000000000000000000000000000000000000000;
+    address public constant Bootstrapper = YnSecurityCouncil;
 }
