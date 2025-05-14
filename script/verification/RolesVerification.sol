@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {BaseVault} from "lib/yieldnest-vault/src/BaseVault.sol";
 import {ClisBnbStrategy} from "src/ClisBnbStrategy.sol";
-import {IActors} from "script/Actors.sol";
+import {IClisBnbActors} from "script/Actors.sol";
 import {console} from "lib/forge-std/src/console.sol";
 import {IAccessControl} from "lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 import {Ownable} from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
@@ -23,7 +23,10 @@ library RolesVerification {
         vm.assertEq(hasRole, expected, message);
     }
 
-    function verifyDefaultRoles(ClisBnbStrategy strategy, TimelockController timelock, IActors actors) internal view {
+    function verifyDefaultRoles(ClisBnbStrategy strategy, TimelockController timelock, IClisBnbActors actors)
+        internal
+        view
+    {
         verifyRole(strategy, actors.ADMIN(), strategy.DEFAULT_ADMIN_ROLE(), true, "Admin has DEFAULT_ADMIN_ROLE");
         verifyRole(strategy, actors.PROCESSOR(), strategy.PROCESSOR_ROLE(), true, "Processor has PROCESSOR_ROLE");
         verifyRole(strategy, actors.PAUSER(), strategy.PAUSER_ROLE(), true, "Pauser has PAUSER_ROLE");

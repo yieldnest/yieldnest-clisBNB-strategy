@@ -2,68 +2,26 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.24;
 
-interface IActors {
-    function YnSecurityCouncil() external view returns (address);
-    function PROCESSOR_MANAGER() external view returns (address);
-    function ASSET_MANAGER() external view returns (address);
+import {IActors as IYnBNBxActors} from "lib/yieldnest-vault/script/Actors.sol";
+import {TestnetActors as TestnetYnBNBxActors} from "lib/yieldnest-vault/script/Actors.sol";
+import {MainnetActors as MainnetYnBNBxActors} from "lib/yieldnest-vault/script/Actors.sol";
+
+interface IClisBnbActors is IYnBNBxActors {
     function LISTA_DEPENDENCY_MANAGER() external view returns (address);
-    function ADMIN() external view returns (address);
     function DEPOSIT_MANAGER() external view returns (address);
-    function KEEPER() external view returns (address);
-    function PROCESSOR() external view returns (address);
-    function PROVIDER_MANAGER() external view returns (address);
-    function BUFFER_MANAGER() external view returns (address);
-    function PAUSER() external view returns (address);
-    function UNPAUSER() external view returns (address);
-    function FEE_MANAGER() external view returns (address);
-    function ALLOCATOR_MANAGER() external view returns (address);
-    function PROPOSER_1() external view returns (address);
-    function EXECUTOR_1() external view returns (address);
     function YNBNBX() external view returns (address);
-    function YnBootstrapper() external view returns (address);
 }
 
-contract MainnetActors is IActors {
-    address public constant YnSecurityCouncil = 0x721688652DEa9Cabec70BD99411EAEAB9485d436;
-    address public constant YnProcessor = 0x258d7614d9c608D191A8a103f95B7Df066a19bbF;
-    address public constant PROCESSOR_MANAGER = YnSecurityCouncil;
-    address public constant ASSET_MANAGER = YnSecurityCouncil;
+contract MainnetActors is MainnetYnBNBxActors, IClisBnbActors {
     address public constant LISTA_DEPENDENCY_MANAGER = YnSecurityCouncil;
-    address public constant ADMIN = YnSecurityCouncil;
     address public constant DEPOSIT_MANAGER = YnSecurityCouncil;
-    address public constant KEEPER = address(0xdeadb11e);
-    address public constant PROCESSOR = YnProcessor;
-    address public constant PROVIDER_MANAGER = YnSecurityCouncil;
-    address public constant BUFFER_MANAGER = YnSecurityCouncil;
-    address public constant PAUSER = YnSecurityCouncil;
-    address public constant UNPAUSER = YnSecurityCouncil;
-    address public constant FEE_MANAGER = YnSecurityCouncil;
-    address public constant ALLOCATOR_MANAGER = YnSecurityCouncil;
-    address public constant PROPOSER_1 = YnSecurityCouncil;
-    address public constant EXECUTOR_1 = YnSecurityCouncil;
     address public constant YNBNBX = 0x32C830f5c34122C6afB8aE87ABA541B7900a2C5F;
-    address public constant YnBootstrapper = YnSecurityCouncil;
 }
 
-contract TestnetActors is IActors {
-    address public constant YnSecurityCouncil = 0x72fdBD51085bDa5eEEd3b55D1a46E2e92f0837a5;
-
+contract TestnetActors is TestnetYnBNBxActors, IClisBnbActors {
     address public constant YnProcessor = YnSecurityCouncil;
-    address public constant PROCESSOR_MANAGER = YnSecurityCouncil;
-    address public constant ASSET_MANAGER = YnSecurityCouncil;
     address public constant LISTA_DEPENDENCY_MANAGER = YnSecurityCouncil;
-    address public constant ADMIN = YnSecurityCouncil;
     address public constant DEPOSIT_MANAGER = YnSecurityCouncil;
-    address public constant KEEPER = address(0xdeadb11e);
-    address public constant PROCESSOR = YnProcessor;
-    address public constant PROVIDER_MANAGER = YnSecurityCouncil;
-    address public constant BUFFER_MANAGER = YnSecurityCouncil;
-    address public constant PAUSER = YnSecurityCouncil;
-    address public constant UNPAUSER = YnSecurityCouncil;
-    address public constant FEE_MANAGER = YnSecurityCouncil;
-    address public constant ALLOCATOR_MANAGER = YnSecurityCouncil;
-    address public constant PROPOSER_1 = YnSecurityCouncil;
-    address public constant EXECUTOR_1 = YnSecurityCouncil;
-    address public constant YNBNBX = 0x0000000000000000000000000000000000000000;
-    address public constant YnBootstrapper = 0x9AD0aA150A85555Fc4466dd852F9351e928A9d26;
+    address public constant YNBNBX = 0x19c3C015Fc0A85E1eAB197d3163Eb726861A1D93;
+    address public constant YnBootstrapper = YnSecurityCouncil;
 }

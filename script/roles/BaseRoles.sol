@@ -2,10 +2,10 @@
 pragma solidity ^0.8.24;
 
 import {ClisBnbStrategy} from "src/ClisBnbStrategy.sol";
-import {IActors} from "script/Actors.sol";
+import {IClisBnbActors} from "script/Actors.sol";
 
 library BaseRoles {
-    function configureDefaultRoles(ClisBnbStrategy clisBnbStrategy, address timelock, IActors actors) internal {
+    function configureDefaultRoles(ClisBnbStrategy clisBnbStrategy, address timelock, IClisBnbActors actors) internal {
         // set admin roles
         clisBnbStrategy.grantRole(clisBnbStrategy.DEFAULT_ADMIN_ROLE(), actors.ADMIN());
         clisBnbStrategy.grantRole(clisBnbStrategy.PROCESSOR_ROLE(), actors.PROCESSOR());
@@ -22,7 +22,7 @@ library BaseRoles {
         clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_MANAGER_ROLE(), timelock);
     }
 
-    function configureDefaultRolesStrategy(ClisBnbStrategy clisBnbStrategy, address timelock, IActors actors)
+    function configureDefaultRolesStrategy(ClisBnbStrategy clisBnbStrategy, address timelock, IClisBnbActors actors)
         internal
     {
         configureDefaultRoles(clisBnbStrategy, timelock, actors);

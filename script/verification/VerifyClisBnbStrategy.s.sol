@@ -10,6 +10,7 @@ import {SafeRules} from "lib/yieldnest-vault/script/rules/SafeRules.sol";
 import {Test} from "forge-std/Test.sol";
 import {RolesVerification} from "./RolesVerification.sol";
 import {Ownable} from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import {MainnetActors} from "script/Actors.sol";
 
 // FOUNDRY_PROFILE=mainnet forge script VerifyClisBnbStrategy
 contract VerifyClisBnbStrategy is BaseScript, Test {
@@ -76,17 +77,24 @@ contract VerifyClisBnbStrategy is BaseScript, Test {
         RolesVerification.verifyTemporaryRoles(clisBnbStrategy, deployer);
         RolesVerification.verifyRole(
             timelock,
-            actors.YnSecurityCouncil(),
+            MainnetActors(address(actors)).YnSecurityCouncil(),
             timelock.PROPOSER_ROLE(),
             true,
             "proposer role for timelock is YnSecurityCouncil"
         );
         RolesVerification.verifyRole(
             timelock,
-            actors.YnSecurityCouncil(),
+            MainnetActors(address(actors)).YnSecurityCouncil(),
             timelock.EXECUTOR_ROLE(),
             true,
             "executor role for timelock is YnSecurityCouncil"
+        );
+        RolesVerification.verifyRole(
+            clisBnbStrategy,
+            MainnetActors(address(actors)).YnBootstrapper(),
+            clisBnbStrategy.ALLOCATOR_ROLE(),
+            true,
+            "bootstrapper has allocator role"
         );
 
         assertGe(timelock.getMinDelay(), minDelay, "min delay is invalid");

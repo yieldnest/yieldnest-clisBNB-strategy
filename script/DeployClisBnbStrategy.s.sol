@@ -12,6 +12,8 @@ import {BaseRoles} from "script/roles/BaseRoles.sol";
 import {BaseRules} from "lib/yieldnest-vault/script/rules/BaseRules.sol";
 import {SafeRules} from "lib/yieldnest-vault/script/rules/SafeRules.sol";
 import {ProvideRules} from "script/rules/ProvideRules.sol";
+import {IClisBnbActors} from "script/Actors.sol";
+import {MainnetActors} from "script/Actors.sol";
 
 // FOUNDRY_PROFILE=mainnet forge script DeployClisBnbStrategy --slow
 contract DeployClisBnbStrategy is BaseScript {
@@ -105,7 +107,7 @@ contract DeployClisBnbStrategy is BaseScript {
         clisBnbStrategy.setHasAllocator(true);
         // grant allocator role
         clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_ROLE(), contracts.YNBNBX());
-        clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_ROLE(), actors.YnBootstrapper());
+        clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_ROLE(), MainnetActors(address(actors)).YnBootstrapper());
 
         uint256 rulesLength = 2;
         uint256 i = 0;

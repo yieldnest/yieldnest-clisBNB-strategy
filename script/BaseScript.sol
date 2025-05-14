@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {Script, stdJson} from "lib/forge-std/src/Script.sol";
 
 import {IProvider} from "lib/yieldnest-vault/src/interface/IProvider.sol";
-import {IActors, MainnetActors, TestnetActors} from "script/Actors.sol";
+import {MainnetActors, TestnetActors} from "script/Actors.sol";
 import {BscContracts, ChapelContracts, IContracts} from "script/Contracts.sol";
 
 import {TransparentUpgradeableProxy} from
@@ -15,12 +15,13 @@ import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 
 import {ProxyUtils} from "lib/yieldnest-vault/script/ProxyUtils.sol";
 import {ClisBnbStrategy} from "src/ClisBnbStrategy.sol";
+import {IClisBnbActors} from "script/Actors.sol";
 
 abstract contract BaseScript is Script {
     using stdJson for string;
 
     uint256 public minDelay;
-    IActors public actors;
+    IClisBnbActors public actors;
     IContracts public contracts;
 
     address public deployer;
@@ -44,13 +45,13 @@ abstract contract BaseScript is Script {
         if (block.chainid == 56) {
             minDelay = 1 days;
             MainnetActors _actors = new MainnetActors();
-            actors = IActors(_actors);
+            actors = IClisBnbActors(_actors);
             contracts = IContracts(new BscContracts());
         }
         if (block.chainid == 97) {
             minDelay = 10 seconds;
             TestnetActors _actors = new TestnetActors();
-            actors = IActors(_actors);
+            actors = IClisBnbActors(_actors);
             contracts = IContracts(new ChapelContracts());
         }
     }
