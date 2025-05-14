@@ -98,7 +98,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         values[1] = depositAmount;
         data[1] = abi.encodeWithSelector(bytes4(keccak256("deposit()")));
 
-        vm.startPrank(YnProcessor);
+        vm.startPrank(YNProcessor);
         uint256 slisBnbBalanceBefore = slisBnb.balanceOf(address(ynBNBx));
         ynBNBx.processor(targets, values, data);
         ynBNBx.processAccounting();
@@ -127,7 +127,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
 
         uint256 clisBnbBalanceBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
         uint256 expectedClisBnbShare = clisBnbStrategy.previewDeposit(slisBnbReceived);
-        vm.startPrank(YnProcessor);
+        vm.startPrank(YNProcessor);
         ynBNBx.processor(targets, values, data);
         ynBNBx.processAccounting();
         vm.stopPrank();
@@ -203,7 +203,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         values[1] = depositAmount;
         data[1] = abi.encodeWithSelector(bytes4(keccak256("deposit()")));
 
-        vm.startPrank(YnProcessor);
+        vm.startPrank(YNProcessor);
         uint256 slisBnbBalanceBefore = slisBnb.balanceOf(address(ynBNBx));
         ynBNBx.processor(targets, values, data);
         ynBNBx.processAccounting();
@@ -233,7 +233,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         uint256 clisBnbBalanceBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
         uint256 expectedClisBnbShare = clisBnbStrategy.previewDeposit(slisBnbReceived);
         uint256 slisBnbBalanceBeforeOfClisBnbStrategy = slisBnb.balanceOf(address(clisBnbStrategy));
-        vm.startPrank(YnProcessor);
+        vm.startPrank(YNProcessor);
         ynBNBx.processor(targets, values, data);
         ynBNBx.processAccounting();
         vm.stopPrank();
@@ -302,7 +302,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
             bytes4(keccak256("withdraw(uint256,address,address)")), withdrawAmount, address(ynBNBx), address(ynBNBx)
         );
 
-        vm.startPrank(YnProcessor);
+        vm.startPrank(YNProcessor);
         ynBNBx.processor(targets, values, data);
         ynBNBx.processAccounting();
         vm.stopPrank();
@@ -515,7 +515,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         uint256 totalAssetsOfynBNBxBefore = ynBNBx.totalAssets();
         uint256 ynBNBxRateBefore = ynBNBx.previewRedeem(1e18);
 
-        vm.startPrank(YnProcessor);
+        vm.startPrank(YNProcessor);
         ynBNBx.processor(target, amount, data);
         ynBNBx.processAccounting();
         vm.stopPrank();
