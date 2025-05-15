@@ -276,6 +276,72 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         );
     }
 
+    function test_ynBNBx_due_to_update_YieldNestMpcWallet(uint256 depositAmount) public {
+        uint256 clisBnbBalanceOfOldYieldNestMpcWalletBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
+        depositAmount = bound(depositAmount, 10000 wei, 1000000 ether);
+
+        test_ynBNBx_deposit_to_clisBnbStrategy_SyncDeposit_Enabled(depositAmount);
+        
+        uint256 clisBnbStrategyBalanceOfYnBNBxBefore = clisBnbStrategy.balanceOf(address(ynBNBx));
+        uint256 clisBnbBalanceOfOldYieldNestMpcWalletAfterDeposit = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
+        uint256 totalAssetsBeforeOfYnBNBx = ynBNBx.totalAssets();
+        uint256 totalAssetsBeforeOfClisBnbStrategy = clisBnbStrategy.totalAssets();
+        uint256 totalSupplyBeforeOfYnBNBx = ynBNBx.totalSupply();
+        uint256 totalSupplyBeforeOfClisBnbStrategy = clisBnbStrategy.totalSupply();
+
+        vm.startPrank(LISTA_DEPENDENCY_MANAGER);
+        address newYieldNestMpcWallet = makeAddr("newYieldNestMpcWallet");
+        clisBnbStrategy.setYieldNestMpcWallet(newYieldNestMpcWallet);
+        vm.stopPrank();
+        {
+address[] memory targets = new address[](1);
+        uint256[] memory values = new uint256[](1);
+        bytes[] memory data = new bytes[](1);
+
+        targets[0] = address(clisBnbStrategy);
+        values[0] = 0;
+        data[0] = abi.encodeWithSelector(
+            bytes4(keccak256("redeem(uint256,address,address)")), clisBnbStrategyBalanceOfYnBNBxBefore, address(ynBNBx), address(ynBNBx)
+        );
+
+        vm.startPrank(YNProcessor);
+        ynBNBx.processor(targets, values, data);
+        ynBNBx.processAccounting();
+        vm.stopPrank();   
+
+        assertEq(clisBnbStrategy.balanceOf(address(ynBNBx)), 0, "clisBnbStrategy balance of ynBNBx should be 0");
+        assertEq(clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET), clisBnbBalanceOfOldYieldNestMpcWalletBefore, "clisBnb balance of old yieldnest mpc wallet should be equal to clisBnb balance of old yieldnest mpc wallet before");
+        
+        targets = new address[](2);
+        values = new uint256[](2);
+        data = new bytes[](2);
+
+        targets[0] = address(slisBnb);
+        values[0] = 0;
+        data[0] = abi.encodeWithSelector(
+            bytes4(keccak256("approve(address,uint256)")), address(clisBnbStrategy), slisBnb.balanceOf(address(ynBNBx))
+        );
+
+        targets[1] = address(clisBnbStrategy);
+        values[1] = 0;
+        data[1] = abi.encodeWithSelector(
+            bytes4(keccak256("deposit(uint256,address)")), slisBnb.balanceOf(address(ynBNBx)), address(ynBNBx)
+        );
+
+        vm.startPrank(YNProcessor);
+        ynBNBx.processor(targets, values, data);
+        ynBNBx.processAccounting();
+        vm.stopPrank();   
+        }
+
+        assertApproxEqAbs(clisBnb.balanceOf(newYieldNestMpcWallet), clisBnbBalanceOfOldYieldNestMpcWalletAfterDeposit - clisBnbBalanceOfOldYieldNestMpcWalletBefore, 100, "clisBnb balance of new yieldnest mpc wallet should be equal to clisBnb balance of old yieldnest mpc wallet received deposit");
+        assertApproxEqAbs(clisBnbStrategy.balanceOf(address(ynBNBx)), clisBnbStrategyBalanceOfYnBNBxBefore, 5, "clisBnbStrategy balance of ynBNBx should be equal to clisBnbStrategy balance of ynBNBx before");
+        assertApproxEqAbs(ynBNBx.totalAssets(), totalAssetsBeforeOfYnBNBx, 5, "total assets of ynBNBx should be equal to total assets of before");
+        assertApproxEqAbs(clisBnbStrategy.totalAssets(), totalAssetsBeforeOfClisBnbStrategy, 5, "total assets of clisBnbStrategy should be equal to total assets of before");
+        assertApproxEqAbs(ynBNBx.totalSupply(), totalSupplyBeforeOfYnBNBx, 5, "total supply of ynBNBx should be equal to total supply of before");
+        assertApproxEqAbs(clisBnbStrategy.totalSupply(), totalSupplyBeforeOfClisBnbStrategy, 5, "total supply of clisBnbStrategy should be equal to total supply of before");
+    }
+
     function test_ynBNBx_withdraw_from_clisBnbStrategy(uint256 depositAmount) public {
         depositAmount = bound(depositAmount, 10000 wei, 1000000 ether);
 
