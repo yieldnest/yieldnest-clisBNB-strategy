@@ -15,7 +15,7 @@ import {ProvideRules} from "script/rules/ProvideRules.sol";
 import {IClisBnbActors} from "script/Actors.sol";
 import {MainnetActors} from "script/Actors.sol";
 
-// FOUNDRY_PROFILE=mainnet forge script DeployClisBnbStrategy --slow
+// FOUNDRY_PROFILE=mainnet forge script DeployClisBnbStrategy --rpc-url <MAINNET_RPC_URL>  --slow --broadcast --account <CAST_WALLET_ACCOUNT>  --sender <SENDER_ADDRESS>  --verify --etherscan-api-key <ETHERSCAN_API_KEY>  -vvv
 contract DeployClisBnbStrategy is BaseScript {
     error InvalidRules();
     error InvalidRateProvider();
