@@ -343,21 +343,20 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
     }
 
     function test_Vault_Withdraw_And_Redeem_NonAllocator_Reverts() public {
-
         address nonAllocator = makeAddr("nonAllocator");
         uint256 depositAmount = 1 ether;
-        
+
         // First deposit some slisBnb to get shares
         deal(address(baseAsset), depositor, depositAmount);
-        
+
         vm.startPrank(depositor);
         baseAsset.approve(address(clisBnbStrategy), depositAmount);
         uint256 shares = clisBnbStrategy.deposit(depositAmount, depositor);
-        
+
         // Transfer shares to non-allocator
         clisBnbStrategy.transfer(nonAllocator, shares);
         vm.stopPrank();
-        
+
         // Non-allocator tries to withdraw
         vm.startPrank(nonAllocator);
         vm.expectRevert(
@@ -402,18 +401,18 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
     function test_Vault_Redeem_NonAllocator_Reverts() public {
         address nonAllocator = makeAddr("nonAllocator");
         uint256 depositAmount = 1 ether;
-        
+
         // First deposit some slisBnb to get shares
         deal(address(baseAsset), depositor, depositAmount);
-        
+
         vm.startPrank(depositor);
         baseAsset.approve(address(clisBnbStrategy), depositAmount);
         uint256 shares = clisBnbStrategy.deposit(depositAmount, depositor);
-        
+
         // Transfer shares to non-allocator
         clisBnbStrategy.transfer(nonAllocator, shares);
         vm.stopPrank();
-        
+
         // Non-allocator tries to redeem
         vm.startPrank(nonAllocator);
         vm.expectRevert(
@@ -427,59 +426,59 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
 
     function test_Vault_Withdraw_AssetNotWithdrawable_Reverts() public {
         uint256 depositAmount = 1 ether;
-        
+
         // Give depositor some baseAsset
         deal(address(baseAsset), depositor, depositAmount);
-        
+
         vm.startPrank(depositor);
         // Approve vault to spend Asset
         baseAsset.approve(address(clisBnbStrategy), depositAmount);
         // Deposit Asset to get shares
         clisBnbStrategy.deposit(depositAmount, depositor);
-        
+
         // Create a mock non-withdrawable asset
         address mockAsset = makeAddr("mockAsset");
-        
+
         // Try to withdraw the non-withdrawable asset
         vm.expectRevert(abi.encodeWithSelector(IBaseStrategy.AssetNotWithdrawable.selector));
         clisBnbStrategy.withdrawAsset(mockAsset, depositAmount / 2, depositor, depositor);
-        
+
         vm.stopPrank();
     }
 
     function test_Vault_Withdraw_Paused_Reverts() public {
         uint256 depositAmount = 1 ether;
-        
+
         // Give depositor some baseAsset
         deal(address(baseAsset), depositor, depositAmount);
-        
+
         vm.startPrank(depositor);
         // Approve vault to spend Asset
         baseAsset.approve(address(clisBnbStrategy), depositAmount);
         // Deposit Asset to get shares
         clisBnbStrategy.deposit(depositAmount, depositor);
         vm.stopPrank();
-        
+
         // Pause the vault
         vm.startPrank(PAUSER);
         clisBnbStrategy.pause();
         vm.stopPrank();
-        
+
         // Try to withdraw when vault is paused
         vm.startPrank(depositor);
         vm.expectRevert(abi.encodeWithSelector(IVault.Paused.selector));
         clisBnbStrategy.withdraw(depositAmount / 2, depositor, depositor);
         vm.stopPrank();
-        
+
         // Verify maxWithdraw and maxRedeem return 0 when vault is paused
         assertEq(clisBnbStrategy.maxWithdraw(depositor), 0, "maxWithdraw should be 0 when vault is paused");
         assertEq(clisBnbStrategy.maxRedeem(depositor), 0, "maxRedeem should be 0 when vault is paused");
-        
+
         // Unpause the vault
         vm.startPrank(ADMIN);
         clisBnbStrategy.unpause();
         vm.stopPrank();
-        
+
         // Verify maxWithdraw and maxRedeem return non-zero values when vault is unpaused
         assertGt(clisBnbStrategy.maxWithdraw(depositor), 0, "maxWithdraw should be > 0 when vault is unpaused");
         assertGt(clisBnbStrategy.maxRedeem(depositor), 0, "maxRedeem should be > 0 when vault is unpaused");
