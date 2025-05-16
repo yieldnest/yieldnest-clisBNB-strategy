@@ -21,6 +21,7 @@ import {BaseRules} from "lib/yieldnest-vault/script/rules/BaseRules.sol";
 import {SafeRules} from "lib/yieldnest-vault/script/rules/SafeRules.sol";
 import {ProvideRules} from "script/rules/ProvideRules.sol";
 import {console} from "lib/forge-std/src/console.sol";
+import {IBaseStrategy} from "lib/yieldnest-vault/src/interface/IBaseStrategy.sol";
 
 contract YnClisBnbStrategyTest is Test, MainnetActors {
     ClisBnbStrategy public clisBnbStrategy;
@@ -366,6 +367,66 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         );
         clisBnbStrategy.withdraw(depositAmount / 2, nonAllocator, nonAllocator);
         vm.stopPrank();
+    }
+
+    function test_Vault_Withdraw_AssetNotWithdrawable_Reverts() public {
+        uint256 depositAmount = 1 ether;
+        
+        // Give depositor some baseAsset
+        deal(address(baseAsset), depositor, depositAmount);
+        
+        vm.startPrank(depositor);
+        // Approve vault to spend Asset
+        baseAsset.approve(address(clisBnbStrategy), depositAmount);
+        // Deposit Asset to get shares
+        clisBnbStrategy.deposit(depositAmount, depositor);
+        
+        // Create a mock non-withdrawable asset
+        address mockAsset = makeAddr("mockAsset");
+        
+        // Try to withdraw the non-withdrawable asset
+        vm.expectRevert(abi.encodeWithSelector(IBaseStrategy.AssetNotWithdrawable.selector));
+        clisBnbStrategy.withdrawAsset(mockAsset, depositAmount / 2, depositor, depositor);
+        
+        vm.stopPrank();
+    }
+
+    function test_Vault_Withdraw_Paused_Reverts() public {
+        uint256 depositAmount = 1 ether;
+        
+        // Give depositor some baseAsset
+        deal(address(baseAsset), depositor, depositAmount);
+        
+        vm.startPrank(depositor);
+        // Approve vault to spend Asset
+        baseAsset.approve(address(clisBnbStrategy), depositAmount);
+        // Deposit Asset to get shares
+        clisBnbStrategy.deposit(depositAmount, depositor);
+        vm.stopPrank();
+        
+        // Pause the vault
+        vm.startPrank(PAUSER);
+        clisBnbStrategy.pause();
+        vm.stopPrank();
+        
+        // Try to withdraw when vault is paused
+        vm.startPrank(depositor);
+        vm.expectRevert(abi.encodeWithSelector(IVault.Paused.selector));
+        clisBnbStrategy.withdraw(depositAmount / 2, depositor, depositor);
+        vm.stopPrank();
+        
+        // Verify maxWithdraw and maxRedeem return 0 when vault is paused
+        assertEq(clisBnbStrategy.maxWithdraw(depositor), 0, "maxWithdraw should be 0 when vault is paused");
+        assertEq(clisBnbStrategy.maxRedeem(depositor), 0, "maxRedeem should be 0 when vault is paused");
+        
+        // Unpause the vault
+        vm.startPrank(ADMIN);
+        clisBnbStrategy.unpause();
+        vm.stopPrank();
+        
+        // Verify maxWithdraw and maxRedeem return non-zero values when vault is unpaused
+        assertGt(clisBnbStrategy.maxWithdraw(depositor), 0, "maxWithdraw should be > 0 when vault is unpaused");
+        assertGt(clisBnbStrategy.maxRedeem(depositor), 0, "maxRedeem should be > 0 when vault is unpaused");
     }
 
     function test_Vault_Withdraw(uint256 depositAmount, uint256 withdrawAmount) public {
