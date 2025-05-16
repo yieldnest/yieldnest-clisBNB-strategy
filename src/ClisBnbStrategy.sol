@@ -61,8 +61,18 @@ contract ClisBnbStrategy is BaseStrategy {
         address slisBnbProvider;
     }
 
+    /// ERRORS ///
+
     error UnsupportedAsset(address asset);
     error InsufficientSlisBnbReceived();
+
+    /// EVENTS ///
+
+    /// @notice Emitted when the sync deposit flag is updated
+    event SyncDepositUpdated(bool previousSyncDeposit, bool newSyncDeposit);
+
+    /// @notice Emitted when the YieldNest MPC wallet address is updated
+    event YieldNestMpcWalletUpdated(address previousWallet, address newWallet);
 
     /**
      * @notice Initializes the vault with initial parameters
@@ -255,7 +265,9 @@ contract ClisBnbStrategy is BaseStrategy {
      * @param _yieldNestMpcWallet The address of the Yieldnest's institutional wallet.
      */
     function setYieldNestMpcWallet(address _yieldNestMpcWallet) external onlyRole(LISTA_DEPENDENCY_MANAGER_ROLE) {
+        address previousWallet = _strategyStorage().yieldNestMpcWallet;
         _strategyStorage().yieldNestMpcWallet = _yieldNestMpcWallet;
+        emit YieldNestMpcWalletUpdated(previousWallet, _yieldNestMpcWallet);
     }
 
     /**
@@ -263,7 +275,9 @@ contract ClisBnbStrategy is BaseStrategy {
      * @param _syncDeposit The sync deposit flag.
      */
     function setSyncDeposit(bool _syncDeposit) external onlyRole(DEPOSIT_MANAGER_ROLE) {
+        bool previousSyncDeposit = _strategyStorage().syncDeposit;
         _strategyStorage().syncDeposit = _syncDeposit;
+        emit SyncDepositUpdated(previousSyncDeposit, _syncDeposit);
     }
 
     /**
