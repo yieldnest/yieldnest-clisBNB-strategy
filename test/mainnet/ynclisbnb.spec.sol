@@ -425,7 +425,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
     }
 
     function test_Vault_Withdraw_AssetNotWithdrawable_Reverts() public {
-        uint256 depositAmount = 1 ether;
+        uint256 depositAmount = 10000 ether;
 
         // Give depositor some baseAsset
         deal(address(baseAsset), depositor, depositAmount);
@@ -435,13 +435,29 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         baseAsset.approve(address(clisBnbStrategy), depositAmount);
         // Deposit Asset to get shares
         clisBnbStrategy.deposit(depositAmount, depositor);
+        vm.stopPrank();
 
-        // Create a mock non-withdrawable asset
-        address mockAsset = makeAddr("mockAsset");
+        // Add the asset using ASSET_MANAGER role
+        vm.startPrank(timelock);
+        clisBnbStrategy.addAsset(MC.WBNB, 18, true, false);
+        clisBnbStrategy.setProvider(address(new MockYnClisBnbStrategyRateProvider()));
+        vm.stopPrank();
 
+        uint256 wbnbDealt = 100 ether;
+        // Deal WBNB to the clisBnbStrategy
+        deal(MC.WBNB, address(clisBnbStrategy), wbnbDealt);
+
+        // Verify the WBNB balance of the strategy is correct
+        assertEq(
+            IERC20(MC.WBNB).balanceOf(address(clisBnbStrategy)),
+            wbnbDealt,
+            "WBNB balance of strategy should match the dealt amount"
+        );
+
+        vm.startPrank(depositor);
         // Try to withdraw the non-withdrawable asset
         vm.expectRevert(abi.encodeWithSelector(IBaseStrategy.AssetNotWithdrawable.selector));
-        clisBnbStrategy.withdrawAsset(mockAsset, depositAmount / 2, depositor, depositor);
+        clisBnbStrategy.withdrawAsset(MC.WBNB, 0, depositor, depositor);
 
         vm.stopPrank();
     }
