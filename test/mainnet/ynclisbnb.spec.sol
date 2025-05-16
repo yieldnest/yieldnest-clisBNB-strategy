@@ -116,13 +116,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         assertEq(clisBnbStrategy.totalAssets(), 0, "Vault totalAssets should be 0 after initialization");
     }
 
-    function test_Vault_ERC4626_view_functions() public view {
-        // Test the paused function
-        assertFalse(clisBnbStrategy.paused(), "Vault should not be paused");
-
-        // Test the asset function
-        assertEq(address(clisBnbStrategy.asset()), MC.SLIS_BNB, "Vault asset should be SLIS_BNB");
-
+    function test_Strategy_view_functions() public view {
         assertEq(
             clisBnbStrategy.provider(),
             address(clisBnbStrategyRateProvider),
@@ -143,6 +137,11 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         );
         assertEq(address(clisBnbStrategy.slisBnb()), MC.SLIS_BNB, "Vault slisBnb should be SLIS_BNB");
         assertEq(clisBnbStrategy.syncDeposit(), true, "Vault syncDeposit should be true");
+    }
+
+    function test_Vault_ERC4626_view_functions() public view {
+        // Test the asset function
+        assertEq(address(clisBnbStrategy.asset()), MC.SLIS_BNB, "Vault asset should be SLIS_BNB");
 
         // Test the totalAssets function
         uint256 totalAssets = clisBnbStrategy.totalAssets();
@@ -174,10 +173,20 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         // Test the maxRedeem function
         uint256 maxRedeem = clisBnbStrategy.maxRedeem(address(this));
         assertEq(maxRedeem, 0, "Max redeem should be zero");
+    }
+
+    function test_max_vault_view_functions() public {
+        // Test the paused function
+        assertFalse(clisBnbStrategy.paused(), "Vault should not be paused");
 
         address[] memory assets = clisBnbStrategy.getAssets();
         assertEq(assets.length, 1, "There should be one asset in the vault");
         assertEq(assets[0], MC.SLIS_BNB, "First asset should be SLIS_BNB");
+
+        assertEq(clisBnbStrategy.defaultAssetIndex(), 0, "Default asset index should be 0");
+
+        // Test the strategy version
+        assertEq(clisBnbStrategy.STRATEGY_VERSION(), "0.2.0", "Strategy version should be 0.2.0");
     }
 
     function test_Vault_Deposit_SlisBnb_SyncDeposit_Enabled(uint256 depositAmount) public {
