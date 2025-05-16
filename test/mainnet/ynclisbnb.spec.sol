@@ -342,7 +342,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         vm.stopPrank();
     }
 
-    function test_Vault_Withdraw_NonAllocator_Reverts() public {
+    function test_Vault_Withdraw_And_Redeem_NonAllocator_Reverts() public {
 
         address nonAllocator = makeAddr("nonAllocator");
         uint256 depositAmount = 1 ether;
@@ -366,6 +366,62 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             )
         );
         clisBnbStrategy.withdraw(depositAmount / 2, nonAllocator, nonAllocator);
+        vm.stopPrank();
+
+        // Non-allocator tries to redeem
+        vm.startPrank(nonAllocator);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, nonAllocator, clisBnbStrategy.ALLOCATOR_ROLE()
+            )
+        );
+        clisBnbStrategy.redeem(shares / 2, nonAllocator, nonAllocator);
+        vm.stopPrank();
+
+        // Test direct withdrawAsset call by non-allocator
+        vm.startPrank(nonAllocator);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, nonAllocator, clisBnbStrategy.ALLOCATOR_ROLE()
+            )
+        );
+        clisBnbStrategy.withdrawAsset(address(baseAsset), depositAmount / 2, nonAllocator, nonAllocator);
+        vm.stopPrank();
+
+        // Test direct redeemAsset call by non-allocator
+        vm.startPrank(nonAllocator);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, nonAllocator, clisBnbStrategy.ALLOCATOR_ROLE()
+            )
+        );
+        clisBnbStrategy.redeemAsset(address(baseAsset), shares / 2, nonAllocator, nonAllocator);
+        vm.stopPrank();
+    }
+
+    function test_Vault_Redeem_NonAllocator_Reverts() public {
+        address nonAllocator = makeAddr("nonAllocator");
+        uint256 depositAmount = 1 ether;
+        
+        // First deposit some slisBnb to get shares
+        deal(address(baseAsset), depositor, depositAmount);
+        
+        vm.startPrank(depositor);
+        baseAsset.approve(address(clisBnbStrategy), depositAmount);
+        uint256 shares = clisBnbStrategy.deposit(depositAmount, depositor);
+        
+        // Transfer shares to non-allocator
+        clisBnbStrategy.transfer(nonAllocator, shares);
+        vm.stopPrank();
+        
+        // Non-allocator tries to redeem
+        vm.startPrank(nonAllocator);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, nonAllocator, clisBnbStrategy.ALLOCATOR_ROLE()
+            )
+        );
+        clisBnbStrategy.redeem(shares / 2, nonAllocator, nonAllocator);
         vm.stopPrank();
     }
 
