@@ -177,7 +177,7 @@ contract ClisBnbStrategy is BaseStrategy {
         address owner,
         uint256 assets,
         uint256 shares
-    ) internal virtual override {
+    ) internal virtual override onlyAllocator {
         // check if the asset is withdrawable
         if (!_getBaseStrategyStorage().isAssetWithdrawable[asset_]) {
             revert AssetNotWithdrawable();

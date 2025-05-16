@@ -342,10 +342,29 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
     }
 
     function test_Vault_Withdraw_NonAllocator_Reverts() public {
+
         address nonAllocator = makeAddr("nonAllocator");
+        uint256 depositAmount = 1 ether;
+        
+        // First deposit some slisBnb to get shares
+        deal(address(baseAsset), depositor, depositAmount);
+        
+        vm.startPrank(depositor);
+        baseAsset.approve(address(clisBnbStrategy), depositAmount);
+        uint256 shares = clisBnbStrategy.deposit(depositAmount, depositor);
+        
+        // Transfer shares to non-allocator
+        clisBnbStrategy.transfer(nonAllocator, shares);
+        vm.stopPrank();
+        
+        // Non-allocator tries to withdraw
         vm.startPrank(nonAllocator);
-        vm.expectRevert(abi.encodeWithSelector(IVault.ExceededMaxWithdraw.selector, nonAllocator, 1 ether, 0));
-        clisBnbStrategy.withdraw(1 ether, nonAllocator, nonAllocator);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, nonAllocator, clisBnbStrategy.ALLOCATOR_ROLE()
+            )
+        );
+        clisBnbStrategy.withdraw(depositAmount / 2, nonAllocator, nonAllocator);
         vm.stopPrank();
     }
 
