@@ -791,15 +791,66 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         );
     }
 
-    function _addWBNBAsAssetToClisBnbStrategy() internal {
-        vm.startPrank(timelock);
-        clisBnbStrategy.addAsset(address(wbnb), true);
-        MockYnClisBnbStrategyRateProvider newProvider = new MockYnClisBnbStrategyRateProvider();
+    function test_withdraw_Wbnb(uint256 depositAmount, uint256 withdrawAmount) public {
+        depositAmount = bound(depositAmount, 10000 wei, 10000 ether);
+        withdrawAmount = bound(withdrawAmount, 0, 10000 ether);
+        withdrawAmount = bound(withdrawAmount, 0, depositAmount - 2);
+        deal(address(wbnb), depositor, depositAmount);
+
+        {
+            vm.startPrank(timelock);
+            // add wbnb as both depositable and withdrawable
+            clisBnbStrategy.addAsset(address(wbnb), true, true);
+            MockYnClisBnbStrategyRateProvider newProvider = new MockYnClisBnbStrategyRateProvider();
+            vm.stopPrank();
+            vm.startPrank(timelock);
+            clisBnbStrategy.setProvider(address(newProvider));
+            vm.stopPrank();
+        }
+
+        // First deposit WBNB to get shares
+        vm.startPrank(depositor);
+        wbnb.approve(address(clisBnbStrategy), depositAmount);
+        clisBnbStrategy.depositAsset(address(wbnb), depositAmount, depositor);
         vm.stopPrank();
-        vm.startPrank(timelock);
-        clisBnbStrategy.setProvider(address(newProvider));
+
+        // Record balances before withdrawal
+        uint256 wbnbBalanceBeforeOfDepositor = wbnb.balanceOf(depositor);
+        uint256 totalAssetsBeforeOfClisBnbStrategy = clisBnbStrategy.totalAssets();
+        uint256 totalSupplyBeforeOfClisBnbStrategy = clisBnbStrategy.totalSupply();
+        uint256 wbnbBalanceBeforeOfClisBnbStrategy = wbnb.balanceOf(address(clisBnbStrategy));
+
+        // Withdraw WBNB
+        vm.startPrank(depositor);
+        uint256 sharesRedeemed = clisBnbStrategy.withdrawAsset(address(wbnb), withdrawAmount, depositor, depositor);
         vm.stopPrank();
+
+        // Verify balances after withdrawal
+        assertEq(
+            wbnb.balanceOf(depositor),
+            wbnbBalanceBeforeOfDepositor + withdrawAmount,
+            "WBNB balance of depositor should increase by withdraw amount"
+        );
+        assertApproxEqAbs(
+            clisBnbStrategy.totalAssets(),
+            totalAssetsBeforeOfClisBnbStrategy
+                - ISlisBnbStakeManager(MC.SLIS_BNB_STAKE_MANAGER).convertBnbToSnBnb(withdrawAmount),
+            1e6,
+            "Total assets of clisBnbStrategy should decrease by withdraw amount"
+        );
+        assertEq(
+            clisBnbStrategy.totalSupply(),
+            totalSupplyBeforeOfClisBnbStrategy - sharesRedeemed,
+            "Total supply of clisBnbStrategy should decrease by shares redeemed"
+        );
+        assertEq(
+            wbnb.balanceOf(address(clisBnbStrategy)),
+            wbnbBalanceBeforeOfClisBnbStrategy - withdrawAmount,
+            "WBNB balance of clisBnbStrategy should decrease by withdraw amount"
+        );
     }
+
+    function _addWBNBAsAssetToClisBnbStrategy() internal {}
 
     function _getStakedSlisBnbBalanceByVault(address _asset, address _vault) internal view virtual returns (uint256) {
         return interaction.locked(_asset, _vault);
