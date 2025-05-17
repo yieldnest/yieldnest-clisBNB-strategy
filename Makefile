@@ -22,3 +22,5 @@ ci-test 	:;	forge test --rpc-url ${rpc} --summary --detailed --gas-report
 # Build and Deploy
 
 build 	:;	forge build
+
+fmt     :;  FOUNDRY_PROFILE=default forge fmt && FOUNDRY_PROFILE=mainnet forge fmt

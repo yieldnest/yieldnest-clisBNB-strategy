@@ -21,6 +21,7 @@ import {BaseRules} from "lib/yieldnest-vault/script/rules/BaseRules.sol";
 import {SafeRules} from "lib/yieldnest-vault/script/rules/SafeRules.sol";
 import {ProvideRules} from "script/rules/ProvideRules.sol";
 import {console} from "lib/forge-std/src/console.sol";
+import {IBaseStrategy} from "lib/yieldnest-vault/src/interface/IBaseStrategy.sol";
 
 contract YnClisBnbStrategyTest is Test, MainnetActors {
     ClisBnbStrategy public clisBnbStrategy;
@@ -115,13 +116,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         assertEq(clisBnbStrategy.totalAssets(), 0, "Vault totalAssets should be 0 after initialization");
     }
 
-    function test_Vault_ERC4626_view_functions() public view {
-        // Test the paused function
-        assertFalse(clisBnbStrategy.paused(), "Vault should not be paused");
-
-        // Test the asset function
-        assertEq(address(clisBnbStrategy.asset()), MC.SLIS_BNB, "Vault asset should be SLIS_BNB");
-
+    function test_Strategy_view_functions() public view {
         assertEq(
             clisBnbStrategy.provider(),
             address(clisBnbStrategyRateProvider),
@@ -142,6 +137,11 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         );
         assertEq(address(clisBnbStrategy.slisBnb()), MC.SLIS_BNB, "Vault slisBnb should be SLIS_BNB");
         assertEq(clisBnbStrategy.syncDeposit(), true, "Vault syncDeposit should be true");
+    }
+
+    function test_Vault_ERC4626_view_functions() public view {
+        // Test the asset function
+        assertEq(address(clisBnbStrategy.asset()), MC.SLIS_BNB, "Vault asset should be SLIS_BNB");
 
         // Test the totalAssets function
         uint256 totalAssets = clisBnbStrategy.totalAssets();
@@ -173,10 +173,20 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         // Test the maxRedeem function
         uint256 maxRedeem = clisBnbStrategy.maxRedeem(address(this));
         assertEq(maxRedeem, 0, "Max redeem should be zero");
+    }
+
+    function test_max_vault_view_functions() public {
+        // Test the paused function
+        assertFalse(clisBnbStrategy.paused(), "Vault should not be paused");
 
         address[] memory assets = clisBnbStrategy.getAssets();
         assertEq(assets.length, 1, "There should be one asset in the vault");
         assertEq(assets[0], MC.SLIS_BNB, "First asset should be SLIS_BNB");
+
+        assertEq(clisBnbStrategy.defaultAssetIndex(), 0, "Default asset index should be 0");
+
+        // Test the strategy version
+        assertEq(clisBnbStrategy.STRATEGY_VERSION(), "0.2.0", "Strategy version should be 0.2.0");
     }
 
     function test_Vault_Deposit_SlisBnb_SyncDeposit_Enabled(uint256 depositAmount) public {
@@ -341,12 +351,162 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         vm.stopPrank();
     }
 
-    function test_Vault_Withdraw_NonAllocator_Reverts() public {
+    function test_Vault_Withdraw_And_Redeem_NonAllocator_Reverts() public {
         address nonAllocator = makeAddr("nonAllocator");
-        vm.startPrank(nonAllocator);
-        vm.expectRevert(abi.encodeWithSelector(IVault.ExceededMaxWithdraw.selector, nonAllocator, 1 ether, 0));
-        clisBnbStrategy.withdraw(1 ether, nonAllocator, nonAllocator);
+        uint256 depositAmount = 1 ether;
+
+        // First deposit some slisBnb to get shares
+        deal(address(baseAsset), depositor, depositAmount);
+
+        vm.startPrank(depositor);
+        baseAsset.approve(address(clisBnbStrategy), depositAmount);
+        uint256 shares = clisBnbStrategy.deposit(depositAmount, depositor);
+
+        // Transfer shares to non-allocator
+        clisBnbStrategy.transfer(nonAllocator, shares);
         vm.stopPrank();
+
+        // Non-allocator tries to withdraw
+        vm.startPrank(nonAllocator);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, nonAllocator, clisBnbStrategy.ALLOCATOR_ROLE()
+            )
+        );
+        clisBnbStrategy.withdraw(depositAmount / 2, nonAllocator, nonAllocator);
+        vm.stopPrank();
+
+        // Non-allocator tries to redeem
+        vm.startPrank(nonAllocator);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, nonAllocator, clisBnbStrategy.ALLOCATOR_ROLE()
+            )
+        );
+        clisBnbStrategy.redeem(shares / 2, nonAllocator, nonAllocator);
+        vm.stopPrank();
+
+        // Test direct withdrawAsset call by non-allocator
+        vm.startPrank(nonAllocator);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, nonAllocator, clisBnbStrategy.ALLOCATOR_ROLE()
+            )
+        );
+        clisBnbStrategy.withdrawAsset(address(baseAsset), depositAmount / 2, nonAllocator, nonAllocator);
+        vm.stopPrank();
+
+        // Test direct redeemAsset call by non-allocator
+        vm.startPrank(nonAllocator);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, nonAllocator, clisBnbStrategy.ALLOCATOR_ROLE()
+            )
+        );
+        clisBnbStrategy.redeemAsset(address(baseAsset), shares / 2, nonAllocator, nonAllocator);
+        vm.stopPrank();
+    }
+
+    function test_Vault_Redeem_NonAllocator_Reverts() public {
+        address nonAllocator = makeAddr("nonAllocator");
+        uint256 depositAmount = 1 ether;
+
+        // First deposit some slisBnb to get shares
+        deal(address(baseAsset), depositor, depositAmount);
+
+        vm.startPrank(depositor);
+        baseAsset.approve(address(clisBnbStrategy), depositAmount);
+        uint256 shares = clisBnbStrategy.deposit(depositAmount, depositor);
+
+        // Transfer shares to non-allocator
+        clisBnbStrategy.transfer(nonAllocator, shares);
+        vm.stopPrank();
+
+        // Non-allocator tries to redeem
+        vm.startPrank(nonAllocator);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, nonAllocator, clisBnbStrategy.ALLOCATOR_ROLE()
+            )
+        );
+        clisBnbStrategy.redeem(shares / 2, nonAllocator, nonAllocator);
+        vm.stopPrank();
+    }
+
+    function test_Vault_Withdraw_AssetNotWithdrawable_Reverts() public {
+        uint256 depositAmount = 10000 ether;
+
+        // Give depositor some baseAsset
+        deal(address(baseAsset), depositor, depositAmount);
+
+        vm.startPrank(depositor);
+        // Approve vault to spend Asset
+        baseAsset.approve(address(clisBnbStrategy), depositAmount);
+        // Deposit Asset to get shares
+        clisBnbStrategy.deposit(depositAmount, depositor);
+        vm.stopPrank();
+
+        // Add the asset using ASSET_MANAGER role
+        vm.startPrank(timelock);
+        clisBnbStrategy.addAsset(MC.WBNB, 18, true, false);
+        clisBnbStrategy.setProvider(address(new MockYnClisBnbStrategyRateProvider()));
+        vm.stopPrank();
+
+        uint256 wbnbDealt = 100 ether;
+        // Deal WBNB to the clisBnbStrategy
+        deal(MC.WBNB, address(clisBnbStrategy), wbnbDealt);
+
+        // Verify the WBNB balance of the strategy is correct
+        assertEq(
+            IERC20(MC.WBNB).balanceOf(address(clisBnbStrategy)),
+            wbnbDealt,
+            "WBNB balance of strategy should match the dealt amount"
+        );
+
+        vm.startPrank(depositor);
+        // Try to withdraw the non-withdrawable asset
+        vm.expectRevert(abi.encodeWithSelector(IBaseStrategy.AssetNotWithdrawable.selector));
+        clisBnbStrategy.withdrawAsset(MC.WBNB, 0, depositor, depositor);
+
+        vm.stopPrank();
+    }
+
+    function test_Vault_Withdraw_Paused_Reverts() public {
+        uint256 depositAmount = 1 ether;
+
+        // Give depositor some baseAsset
+        deal(address(baseAsset), depositor, depositAmount);
+
+        vm.startPrank(depositor);
+        // Approve vault to spend Asset
+        baseAsset.approve(address(clisBnbStrategy), depositAmount);
+        // Deposit Asset to get shares
+        clisBnbStrategy.deposit(depositAmount, depositor);
+        vm.stopPrank();
+
+        // Pause the vault
+        vm.startPrank(PAUSER);
+        clisBnbStrategy.pause();
+        vm.stopPrank();
+
+        // Try to withdraw when vault is paused
+        vm.startPrank(depositor);
+        vm.expectRevert(abi.encodeWithSelector(IVault.Paused.selector));
+        clisBnbStrategy.withdraw(depositAmount / 2, depositor, depositor);
+        vm.stopPrank();
+
+        // Verify maxWithdraw and maxRedeem return 0 when vault is paused
+        assertEq(clisBnbStrategy.maxWithdraw(depositor), 0, "maxWithdraw should be 0 when vault is paused");
+        assertEq(clisBnbStrategy.maxRedeem(depositor), 0, "maxRedeem should be 0 when vault is paused");
+
+        // Unpause the vault
+        vm.startPrank(ADMIN);
+        clisBnbStrategy.unpause();
+        vm.stopPrank();
+
+        // Verify maxWithdraw and maxRedeem return non-zero values when vault is unpaused
+        assertGt(clisBnbStrategy.maxWithdraw(depositor), 0, "maxWithdraw should be > 0 when vault is unpaused");
+        assertGt(clisBnbStrategy.maxRedeem(depositor), 0, "maxRedeem should be > 0 when vault is unpaused");
     }
 
     function test_Vault_Withdraw(uint256 depositAmount, uint256 withdrawAmount) public {
@@ -631,9 +791,69 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         );
     }
 
+    function test_withdraw_Wbnb(uint256 depositAmount, uint256 withdrawAmount) public {
+        depositAmount = bound(depositAmount, 10000 wei, 10000 ether);
+        withdrawAmount = bound(withdrawAmount, 0, 10000 ether);
+        withdrawAmount = bound(withdrawAmount, 0, depositAmount - 2);
+        deal(address(wbnb), depositor, depositAmount);
+
+        {
+            vm.startPrank(timelock);
+            // add wbnb as both depositable and withdrawable
+            clisBnbStrategy.addAsset(address(wbnb), true, true);
+            MockYnClisBnbStrategyRateProvider newProvider = new MockYnClisBnbStrategyRateProvider();
+            vm.stopPrank();
+            vm.startPrank(timelock);
+            clisBnbStrategy.setProvider(address(newProvider));
+            vm.stopPrank();
+        }
+
+        // First deposit WBNB to get shares
+        vm.startPrank(depositor);
+        wbnb.approve(address(clisBnbStrategy), depositAmount);
+        clisBnbStrategy.depositAsset(address(wbnb), depositAmount, depositor);
+        vm.stopPrank();
+
+        // Record balances before withdrawal
+        uint256 wbnbBalanceBeforeOfDepositor = wbnb.balanceOf(depositor);
+        uint256 totalAssetsBeforeOfClisBnbStrategy = clisBnbStrategy.totalAssets();
+        uint256 totalSupplyBeforeOfClisBnbStrategy = clisBnbStrategy.totalSupply();
+        uint256 wbnbBalanceBeforeOfClisBnbStrategy = wbnb.balanceOf(address(clisBnbStrategy));
+
+        // Withdraw WBNB
+        vm.startPrank(depositor);
+        uint256 sharesRedeemed = clisBnbStrategy.withdrawAsset(address(wbnb), withdrawAmount, depositor, depositor);
+        vm.stopPrank();
+
+        // Verify balances after withdrawal
+        assertEq(
+            wbnb.balanceOf(depositor),
+            wbnbBalanceBeforeOfDepositor + withdrawAmount,
+            "WBNB balance of depositor should increase by withdraw amount"
+        );
+        assertApproxEqAbs(
+            clisBnbStrategy.totalAssets(),
+            totalAssetsBeforeOfClisBnbStrategy
+                - ISlisBnbStakeManager(MC.SLIS_BNB_STAKE_MANAGER).convertBnbToSnBnb(withdrawAmount),
+            1e6,
+            "Total assets of clisBnbStrategy should decrease by withdraw amount"
+        );
+        assertEq(
+            clisBnbStrategy.totalSupply(),
+            totalSupplyBeforeOfClisBnbStrategy - sharesRedeemed,
+            "Total supply of clisBnbStrategy should decrease by shares redeemed"
+        );
+        assertEq(
+            wbnb.balanceOf(address(clisBnbStrategy)),
+            wbnbBalanceBeforeOfClisBnbStrategy - withdrawAmount,
+            "WBNB balance of clisBnbStrategy should decrease by withdraw amount"
+        );
+    }
+
     function _addWBNBAsAssetToClisBnbStrategy() internal {
         vm.startPrank(timelock);
-        clisBnbStrategy.addAsset(address(wbnb), true);
+        // add wbnb as both depositable and withdrawable
+        clisBnbStrategy.addAsset(address(wbnb), true, true);
         MockYnClisBnbStrategyRateProvider newProvider = new MockYnClisBnbStrategyRateProvider();
         vm.stopPrank();
         vm.startPrank(timelock);
