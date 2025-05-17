@@ -850,7 +850,16 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         );
     }
 
-    function _addWBNBAsAssetToClisBnbStrategy() internal {}
+    function _addWBNBAsAssetToClisBnbStrategy() internal {
+        vm.startPrank(timelock);
+        // add wbnb as both depositable and withdrawable
+        clisBnbStrategy.addAsset(address(wbnb), true, true);
+        MockYnClisBnbStrategyRateProvider newProvider = new MockYnClisBnbStrategyRateProvider();
+        vm.stopPrank();
+        vm.startPrank(timelock);
+        clisBnbStrategy.setProvider(address(newProvider));
+        vm.stopPrank();
+    }
 
     function _getStakedSlisBnbBalanceByVault(address _asset, address _vault) internal view virtual returns (uint256) {
         return interaction.locked(_asset, _vault);
