@@ -109,7 +109,7 @@ contract DeployClisBnbStrategy is BaseScript {
         clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_ROLE(), contracts.YNBNBX());
         clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_ROLE(), MainnetActors(address(actors)).YnBootstrapper());
 
-        uint256 rulesLength = 2;
+        uint256 rulesLength = 3;
         uint256 i = 0;
 
         SafeRules.RuleParams[] memory rules = new SafeRules.RuleParams[](rulesLength);
