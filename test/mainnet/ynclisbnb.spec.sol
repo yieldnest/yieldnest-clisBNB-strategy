@@ -707,7 +707,6 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
 
         // Initial balances
         uint256 depositorAssetBefore = baseAsset.balanceOf(depositor);
-        uint256 vaultAssetBefore = baseAsset.balanceOf(address(clisBnbStrategy));
         uint256 vaultStakedSlisBnbBefore = _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy));
         uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
 
@@ -787,7 +786,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         // Deposit slisBnb to the strategy
         vm.startPrank(depositor);
         baseAsset.approve(address(clisBnbStrategy), depositAmount);
-        uint256 shares = clisBnbStrategy.deposit(depositAmount, depositor);
+        clisBnbStrategy.deposit(depositAmount, depositor);
         vm.stopPrank();
 
         {
