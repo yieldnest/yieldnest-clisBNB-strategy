@@ -245,9 +245,9 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
 
         assertApproxEqRel(
             clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET),
-            clisBnbBalanceOfYieldnestMpcWalletBefore + depositAmount,
-            5e16,
-            "ClisBnb balance of YieldnestMpcWallet should increase by 95% of deposit amount after deposit"
+            clisBnbBalanceOfYieldnestMpcWalletBefore + _calculateClisBnbFromSlisBnb(depositAmount),
+            1,
+            "ClisBnb balance of YieldnestMpcWallet should increase by deposit amount adjusted by exchange rate"
         );
     }
 
@@ -638,9 +638,9 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         );
         assertApproxEqRel(
             clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET),
-            clisBnbBalanceOfYieldnestMpcWalletBefore + rewardAmount,
-            5e16,
-            "ClisBnb balance of YieldnestMpcWallet should increase by 95% of reward amount"
+            clisBnbBalanceOfYieldnestMpcWalletBefore + _calculateClisBnbFromSlisBnb(rewardAmount),
+            1,
+            "ClisBnb balance of YieldnestMpcWallet should increase by reward amount adjusted by exchange rate"
         );
     }
 
@@ -989,5 +989,29 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
 
     function _getStakedSlisBnbBalanceByVault(address _asset, address _vault) internal view virtual returns (uint256) {
         return interaction.locked(_asset, _vault);
+    }
+
+    /**
+     * @notice Calculates the clisBNB amount from slisBNB amount using the exchange rate
+     * @param slisBnbAmount The amount of slisBNB
+     * @return clisBnbAmount The calculated clisBNB amount
+     */
+    function _calculateClisBnbFromSlisBnb(uint256 slisBnbAmount) internal view returns (uint256 clisBnbAmount) {
+        // Get the provider to access exchange rate
+        ISlisBnbProvider provider = ISlisBnbProvider(MC.SLIS_BNB_PROVIDER);
+
+        // Calculate clisBnb amount based on exchange rate
+        uint256 exchangeRate = provider.exchangeRate();
+        uint256 RATE_DENOMINATOR = provider.RATE_DENOMINATOR();
+
+        // Calculate LP amount based on exchange rate
+        uint256 lpAmount = slisBnbAmount * exchangeRate / RATE_DENOMINATOR;
+
+        // Calculate holder LP amount based on user LP rate
+        uint256 userLpRate = provider.userLpRate();
+        uint256 holderLpAmount = lpAmount * userLpRate / RATE_DENOMINATOR;
+
+        // Return the calculated clisBnb amount
+        return holderLpAmount;
     }
 }
