@@ -28,4 +28,27 @@ library ProvideRules {
 
         return SafeRules.RuleParams({contractAddress: contractAddress, funcSig: funcSig, rule: rule});
     }
+
+    function getReleaseRule(address contractAddress, address recipient)
+        internal
+        pure
+        returns (SafeRules.RuleParams memory)
+    {
+        // release(address recipient, uint256 amount)
+        bytes4 funcSig = ISlisBnbProvider.release.selector;
+
+        IVault.ParamRule[] memory paramRules = new IVault.ParamRule[](2);
+
+        address[] memory allowList = new address[](1);
+        allowList[0] = recipient;
+        paramRules[0] = IVault.ParamRule({paramType: IVault.ParamType.ADDRESS, isArray: false, allowList: allowList});
+
+        paramRules[1] =
+            IVault.ParamRule({paramType: IVault.ParamType.UINT256, isArray: false, allowList: new address[](0)});
+
+        IVault.FunctionRule memory rule =
+            IVault.FunctionRule({isActive: true, paramRules: paramRules, validator: IValidator(address(0))});
+
+        return SafeRules.RuleParams({contractAddress: contractAddress, funcSig: funcSig, rule: rule});
+    }
 }

@@ -116,6 +116,7 @@ contract DeployClisBnbStrategy is BaseScript {
 
         rules[i++] = BaseRules.getApprovalRule(contracts.SLIS_BNB(), contracts.SLIS_BNB_PROVIDER());
         rules[i++] = ProvideRules.getProvideRule(contracts.SLIS_BNB_PROVIDER(), contracts.YIELDNEST_MPC_WALLET());
+        rules[i++] = ProvideRules.getReleaseRule(contracts.SLIS_BNB_PROVIDER(), address(clisBnbStrategy));
 
         if (i != rulesLength) {
             revert InvalidRules();

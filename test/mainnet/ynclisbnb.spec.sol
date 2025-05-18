@@ -77,13 +77,14 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_ROLE(), MC.YNBNBX);
         clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_ROLE(), depositor);
 
-        uint256 rulesLength = 2;
+        uint256 rulesLength = 3;
         uint256 i = 0;
 
         SafeRules.RuleParams[] memory rules = new SafeRules.RuleParams[](rulesLength);
 
         rules[i++] = BaseRules.getApprovalRule(MC.SLIS_BNB, MC.SLIS_BNB_PROVIDER);
         rules[i++] = ProvideRules.getProvideRule(MC.SLIS_BNB_PROVIDER, MC.YIELDNEST_MPC_WALLET);
+        rules[i++] = ProvideRules.getReleaseRule(MC.SLIS_BNB_PROVIDER, address(clisBnbStrategy));
 
         if (i != rulesLength) {
             revert InvalidRules();
@@ -175,7 +176,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         assertEq(maxRedeem, 0, "Max redeem should be zero");
     }
 
-    function test_max_vault_view_functions() public {
+    function test_max_vault_view_functions() public view {
         // Test the paused function
         assertFalse(clisBnbStrategy.paused(), "Vault should not be paused");
 
@@ -697,6 +698,78 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             clisBnbBalanceOfYieldnestMpcWalletBefore,
             "ClisBnb balance of YieldnestMpcWallet should not change"
         );
+    }
+
+    function test_deposit_and_processor_release(uint256 depositAmount, uint256 releaseAmount) public {
+        depositAmount = bound(depositAmount, 1000 wei, 1000000 ether);
+        releaseAmount = bound(releaseAmount, 1000 wei, 1000000 ether);
+
+        // Initial balances
+        uint256 depositorAssetBefore = baseAsset.balanceOf(depositor);
+        uint256 vaultAssetBefore = baseAsset.balanceOf(address(clisBnbStrategy));
+        uint256 vaultStakedSlisBnbBefore = _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy));
+        uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
+
+        // Give depositor some baseAsset
+        deal(address(baseAsset), depositor, depositorAssetBefore + depositAmount);
+
+        // Deposit slisBnb to the strategy
+        vm.startPrank(depositor);
+        baseAsset.approve(address(clisBnbStrategy), depositAmount);
+        uint256 shares = clisBnbStrategy.deposit(depositAmount, depositor);
+        vm.stopPrank();
+
+        // Verify deposit was successful
+        assertEq(clisBnbStrategy.balanceOf(depositor), shares, "Depositor should receive correct shares");
+        assertEq(baseAsset.balanceOf(depositor), depositorAssetBefore, "Depositor's slisBnb should be transferred");
+
+        // Verify slisBnb was staked with Lista (since syncDeposit is enabled)
+        assertEq(
+            _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy)),
+            vaultStakedSlisBnbBefore + depositAmount,
+            "Staked slisBnb balance should increase by deposit amount"
+        );
+        assertGt(
+            clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET),
+            clisBnbBalanceOfYieldnestMpcWalletBefore,
+            "YieldNest MPC wallet should receive clisBnb"
+        );
+
+        // Now test processor release functionality
+        releaseAmount = bound(releaseAmount, 1000 wei, depositAmount);
+
+        // Store state before release
+        uint256 vaultSlisBnbBalanceBefore = baseAsset.balanceOf(address(clisBnbStrategy));
+        uint256 vaultStakedSlisBnbBeforeRelease =
+            _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy));
+
+        {
+            vm.startPrank(PROCESSOR);
+            address[] memory targets = new address[](1);
+            uint256[] memory values = new uint256[](1);
+            bytes[] memory datas = new bytes[](1);
+            targets[0] = MC.SLIS_BNB_PROVIDER;
+            values[0] = 0;
+            datas[0] =
+                abi.encodeWithSelector(ISlisBnbProvider.release.selector, address(clisBnbStrategy), releaseAmount);
+            clisBnbStrategy.processor(targets, values, datas);
+            vm.stopPrank();
+        }
+
+        // Verify release was successful
+        assertEq(
+            baseAsset.balanceOf(address(clisBnbStrategy)),
+            vaultSlisBnbBalanceBefore + releaseAmount,
+            "Vault should receive released slisBnb"
+        );
+        assertEq(
+            _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy)),
+            vaultStakedSlisBnbBeforeRelease - releaseAmount,
+            "Staked slisBnb balance should decrease by release amount"
+        );
+
+        // Total assets should remain the same (just moved from staked to unstaked)
+        assertEq(clisBnbStrategy.totalAssets(), depositAmount, "Total assets should remain unchanged after release");
     }
 
     function test_SetYieldNestMpcWallet() public {
