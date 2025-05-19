@@ -20,13 +20,17 @@ interface IContracts {
 }
 
 library MainnetContracts {
+    // YieldNest
+    address public constant YNCLISBNB = 0x1cBfbC3CB909Fb0BF0E511AFAe6cDBa6ba5e2252;
+    // YieldNest BNBx
+    address public constant YNBNBX = 0x32C830f5c34122C6afB8aE87ABA541B7900a2C5F;
+
     address public constant SLIS_BNB_PROVIDER = 0xfD31e1C5e5571f8E7FE318f80888C1e6da97819b;
     address public constant YIELDNEST_MPC_WALLET = 0x24bcA21172B564474734Ae25900663BCC964d92b;
     address public constant SLIS_BNB = 0xB0b84D294e0C75A6abe60171b70edEb2EFd14A1B;
     address public constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address public constant SLIS_BNB_STAKE_MANAGER = 0x1adB950d8bB3dA4bE104211D5AB038628e477fE6;
     address public constant INTERACTION = 0xB68443Ee3e828baD1526b3e0Bdf2Dfc6b1975ec4;
-    address public constant YNBNBX = 0x32C830f5c34122C6afB8aE87ABA541B7900a2C5F;
     address public constant YNASBNBK = 0x504A89a3Ed6A51D17D4f936E58476c779EE7315b;
     address public constant AS_BNB_MINTER = 0x2F31ab8950c50080E77999fa456372f276952fD8;
     address public constant ASBNB = 0x77734e70b6E88b4d82fE632a168EDf6e700912b6;

@@ -4,12 +4,14 @@ pragma solidity ^0.8.24;
 import {Test} from "lib/forge-std/src/Test.sol";
 import {MainnetContracts as MC} from "script/Contracts.sol";
 import {ClisBnbStrategyRateProvider} from "src/module/ClisBnbStrategyRateProvider.sol";
+import {MainnetContracts as MC} from "script/Contracts.sol";
+import {ClisBnbStrategy} from "src/ClisBnbStrategy.sol";
 
 contract ClisBnbProviderTest is Test {
     ClisBnbStrategyRateProvider public provider;
 
     function setUp() public {
-        provider = new ClisBnbStrategyRateProvider();
+        provider = ClisBnbStrategyRateProvider(ClisBnbStrategy(payable(MC.YNCLISBNB)).provider());
     }
 
     function test_Provider_GetRateWBNB_Revert() public {
