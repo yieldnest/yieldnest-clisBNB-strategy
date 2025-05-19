@@ -71,9 +71,11 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
 
         for (uint256 i = 0; i < assets.length; i++) {
             if (assets[i] == address(slisBnb)) {
+                assertFalse(slisBnbIsAsset, "slisBNB should not be duplicated");
                 slisBnbIsAsset = true;
             }
             if (assets[i] == address(clisBnbStrategy)) {
+                assertFalse(clisBnbStrategyIsAsset, "clisBNB Strategy should not be duplicated");
                 clisBnbStrategyIsAsset = true;
             }
         }
