@@ -491,7 +491,13 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
     }
 
     function test_reward_stream_to_clisBnbStrategy(uint256 depositAmount, uint256 rewardAmount) public {
+        // deposit at least 10 ether to make it substantial relative to the total deposits in ynBNBx
+        // so the reward stream is significant to change the redemption rate
+        depositAmount = bound(depositAmount, 10 ether, 1000000 ether);
         test_ynBNBx_deposit_to_clisBnbStrategy_SyncDeposit_Enabled(depositAmount);
+
+        assertGt(clisBnbStrategy.balanceOf(address(ynBNBx)), 0, "Initial clisBnbStrategy balance of ynBNBx should be 0");
+
         rewardAmount = bound(rewardAmount, 0.1 ether, 1000000 ether);
 
         deal(address(slisBnb), DEPOSIT_MANAGER, rewardAmount);
@@ -617,9 +623,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
             totalSupplyBeforeOfYnBNBx,
             "total supply of ynBNBx should be equal to total supply of before"
         );
-        assertEq(
-            ynBNBx.previewRedeem(1 ether), ynBNBxRateBefore, "ynBNBx rate should be greater than ynBNBx rate before"
-        );
+        assertEq(ynBNBx.previewRedeem(1 ether), ynBNBxRateBefore, "ynBNBx rate should be equal to ynBNBx rate before");
     }
 
     function test_ynBNBx_withdraw_from_ynasBNBK() public {
