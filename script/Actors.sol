@@ -16,6 +16,8 @@ contract MainnetActors is MainnetYnBNBxActors, IClisBnbActors {
     address public constant LISTA_DEPENDENCY_MANAGER = YnSecurityCouncil;
     address public constant DEPOSIT_MANAGER = YnSecurityCouncil;
     address public constant YNBNBX = 0x32C830f5c34122C6afB8aE87ABA541B7900a2C5F;
+
+    address public constant TIMELOCK = 0xd7C83Dc5b7accc62dcc958bD1919a13DdB7eD06c;
 }
 
 contract TestnetActors is TestnetYnBNBxActors, IClisBnbActors {
