@@ -22,6 +22,8 @@ import {SafeRules} from "lib/yieldnest-vault/script/rules/SafeRules.sol";
 import {ProvideRules} from "script/rules/ProvideRules.sol";
 import {console} from "lib/forge-std/src/console.sol";
 import {IBaseStrategy} from "lib/yieldnest-vault/src/interface/IBaseStrategy.sol";
+import {ProxyUtils} from "lib/yieldnest-vault/script/ProxyUtils.sol";
+import {ProxyAdmin} from "lib/openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol";
 
 contract YnClisBnbStrategyTest is Test, MainnetActors {
     ClisBnbStrategy public clisBnbStrategy;
@@ -32,34 +34,15 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
     IERC20 public clisBnb;
     Interaction public interaction;
     address public depositor = makeAddr("depositor");
-    address public timelock = makeAddr("timelock");
+    address public timelock;
     MainnetActors public actors;
 
     error InvalidRules();
 
     function setUp() public virtual {
-        actors = new MainnetActors();
-        ClisBnbStrategy clisBnbStrategyImplementation = new ClisBnbStrategy();
-        clisBnbStrategy = ClisBnbStrategy(
-            payable(address(new TransparentUpgradeableProxy(address(clisBnbStrategyImplementation), timelock, "")))
-        );
-        address deployer = makeAddr("deployer");
-        ClisBnbStrategy.Init memory init = ClisBnbStrategy.Init({
-            admin: deployer,
-            name: "YieldNest ClisBnB strategy",
-            symbol: "ynClisBnb",
-            decimals: 18,
-            paused: true,
-            countNativeAsset: false,
-            alwaysComputeTotalAssets: true,
-            defaultAssetIndex: 0,
-            slisBnb: MC.SLIS_BNB,
-            yieldNestMpcWallet: MC.YIELDNEST_MPC_WALLET,
-            listaInteraction: MC.INTERACTION,
-            slisBnbProvider: MC.SLIS_BNB_PROVIDER
-        });
-        clisBnbStrategy.initialize(init);
-        clisBnbStrategyRateProvider = new ClisBnbStrategyRateProvider();
+        clisBnbStrategy = ClisBnbStrategy(payable(MC.YNCLISBNB));
+        clisBnbStrategyRateProvider = ClisBnbStrategyRateProvider(address(clisBnbStrategy.provider()));
+        timelock = ProxyAdmin(ProxyUtils.getProxyAdmin(address(clisBnbStrategy))).owner();
 
         interaction = Interaction(MC.INTERACTION);
         baseAsset = IERC20(MC.SLIS_BNB);
@@ -67,43 +50,16 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         slisBnb = IERC20(MC.SLIS_BNB);
         clisBnb = IERC20(MC.CLIS_BNB);
 
-        vm.startPrank(deployer);
-        BaseRoles.configureDefaultRoles(clisBnbStrategy, timelock, actors);
-        BaseRoles.configureTemporaryRolesStrategy(clisBnbStrategy, deployer);
-
-        clisBnbStrategy.setProvider(address(clisBnbStrategyRateProvider));
-        clisBnbStrategy.setSyncDeposit(true);
-        clisBnbStrategy.setHasAllocator(true);
-        clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_ROLE(), MC.YNBNBX);
+        // Setup admin prank for role management
+        vm.startPrank(ADMIN);
         clisBnbStrategy.grantRole(clisBnbStrategy.ALLOCATOR_ROLE(), depositor);
-
-        uint256 rulesLength = 3;
-        uint256 i = 0;
-
-        SafeRules.RuleParams[] memory rules = new SafeRules.RuleParams[](rulesLength);
-
-        rules[i++] = BaseRules.getApprovalRule(MC.SLIS_BNB, MC.SLIS_BNB_PROVIDER);
-        rules[i++] = ProvideRules.getProvideRule(MC.SLIS_BNB_PROVIDER, MC.YIELDNEST_MPC_WALLET);
-        rules[i++] = ProvideRules.getReleaseRule(MC.SLIS_BNB_PROVIDER, address(clisBnbStrategy));
-
-        if (i != rulesLength) {
-            revert InvalidRules();
-        }
-
-        SafeRules.setProcessorRules(clisBnbStrategy, rules, false);
-
-        clisBnbStrategy.unpause();
-
-        clisBnbStrategy.processAccounting();
-
-        BaseRoles.renounceTemporaryRolesStrategy(clisBnbStrategy, deployer);
         vm.stopPrank();
     }
 
     function test_Vault_ERC20_view_functions() public view {
         // Test the name function
         assertEq(
-            clisBnbStrategy.name(), "YieldNest ClisBnB strategy", "Vault name should be 'YieldNest ClisBnB strategy'"
+            clisBnbStrategy.name(), "YieldNest ClisBnb Strategy", "Vault name should be 'YieldNest ClisBnb Strategy'"
         );
 
         // Test the symbol function

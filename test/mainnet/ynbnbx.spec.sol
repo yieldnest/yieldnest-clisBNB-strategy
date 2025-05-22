@@ -29,8 +29,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         super.setUp();
         ynBNBx = Vault(payable(MC.YNBNBX));
         ynasBNBK = BaseStrategy(payable(MC.YNASBNBK));
-        ynBNBxProvider = new MockYnBnbxProvider();
-
+        ynBNBxProvider = IProvider(ynBNBx.provider());
         {
             // grant role
             vm.startPrank(YnSecurityCouncil);
@@ -39,7 +38,6 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
             ynBNBx.grantRole(ynBNBx.PROVIDER_MANAGER_ROLE(), PROVIDER_MANAGER);
 
             ynBNBx.addAsset(address(clisBnbStrategy), false);
-            ynBNBx.setProvider(address(ynBNBxProvider));
             vm.stopPrank();
         }
 
@@ -63,6 +61,41 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         ynBNBx.processAccounting();
         ynasBNBK.processAccounting();
         clisBnbStrategy.processAccounting();
+    }
+
+    function test_ynBNBx_assets_and_rates() public {
+        // Check if slisBNB is an asset of ynBNBx
+        address[] memory assets = ynBNBx.getAssets();
+        bool slisBnbIsAsset = false;
+        bool clisBnbStrategyIsAsset = false;
+
+        for (uint256 i = 0; i < assets.length; i++) {
+            if (assets[i] == address(slisBnb)) {
+                assertFalse(slisBnbIsAsset, "slisBNB should not be duplicated");
+                slisBnbIsAsset = true;
+            }
+            if (assets[i] == address(clisBnbStrategy)) {
+                assertFalse(clisBnbStrategyIsAsset, "clisBNB Strategy should not be duplicated");
+                clisBnbStrategyIsAsset = true;
+            }
+        }
+
+        assertTrue(slisBnbIsAsset, "slisBNB should be an asset of ynBNBx");
+        assertTrue(clisBnbStrategyIsAsset, "clisBnbStrategy should be an asset of ynBNBx");
+
+        // Check that the provider returns a rate for both assets
+        vm.startPrank(address(ynBNBx));
+        uint256 slisBnbRate = ynBNBxProvider.getRate(address(slisBnb));
+        uint256 clisBnbStrategyRate = ynBNBxProvider.getRate(address(clisBnbStrategy));
+        vm.stopPrank();
+
+        assertGt(slisBnbRate, 0, "Provider should return a rate greater than 0 for slisBNB");
+        assertGt(clisBnbStrategyRate, 0, "Provider should return a rate greater than 0 for clisBnbStrategy");
+
+        // Check that clisBnbStrategy rate is greater than or equal to the slisBNB rate
+        assertGe(
+            clisBnbStrategyRate, slisBnbRate, "clisBnbStrategy rate should be greater than or equal to slisBNB rate"
+        );
     }
 
     function test_ynBNBx_deposit_to_clisBnbStrategy_SyncDeposit_Enabled(uint256 depositAmount) public {
