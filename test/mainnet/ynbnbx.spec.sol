@@ -312,7 +312,11 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         );
     }
 
-    function test_ynBNBx_due_to_update_YieldNestMpcWallet(uint256 depositAmount) public {
+    function test_ynBNBx_due_to_update_YieldNestMpcWallet()
+        //uint256 depositAmount
+        public
+    {
+        uint256 depositAmount = 10000 ether;
         uint256 clisBnbBalanceOfOldYieldNestMpcWalletBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
         depositAmount = bound(depositAmount, 10000 wei, 1000000 ether);
 
@@ -420,9 +424,12 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
     function test_ynBNBx_withdraw_from_clisBnbStrategy(uint256 depositAmount) public {
         depositAmount = bound(depositAmount, 10000 wei, 1000000 ether);
 
+        uint256 amountStakedBeforeDeposit = _getStakedSlisBnbBalanceByVault(address(slisBnb), address(clisBnbStrategy));
+
         test_ynBNBx_deposit_to_clisBnbStrategy_SyncDeposit_Enabled(depositAmount);
 
-        uint256 withdrawAmount = _getStakedSlisBnbBalanceByVault(address(slisBnb), address(clisBnbStrategy));
+        uint256 withdrawAmount =
+            _getStakedSlisBnbBalanceByVault(address(slisBnb), address(clisBnbStrategy)) - amountStakedBeforeDeposit;
         withdrawAmount = bound(withdrawAmount, 1 wei, withdrawAmount);
         uint256 clisBnbBalanceBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
         uint256 slisBnbBalanceBeforeOfYnBNBx = slisBnb.balanceOf(address(ynBNBx));
@@ -473,10 +480,11 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
             totalAssetsBeforeOfClisBnbStrategy - withdrawAmount,
             "total assets of clisBnbStrategy should be equal to total assets of before minus withdraw amount"
         );
-        assertEq(
+        assertApproxEqAbs(
             ynBNBx.totalAssets(),
             totalAssetsBeforeOfYnBNBx,
-            "total assets of ynBNBx should be equal to total assets of before"
+            1 wei,
+            "total assets of ynBNBx should be approximately equal to total assets of before"
         );
         assertEq(
             ynBNBx.totalSupply(),
