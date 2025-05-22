@@ -36,8 +36,6 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
             ynBNBx.grantRole(ynBNBx.PROCESSOR_MANAGER_ROLE(), PROCESSOR_MANAGER);
             ynBNBx.grantRole(ynBNBx.ASSET_MANAGER_ROLE(), ASSET_MANAGER);
             ynBNBx.grantRole(ynBNBx.PROVIDER_MANAGER_ROLE(), PROVIDER_MANAGER);
-
-            ynBNBx.addAsset(address(clisBnbStrategy), false);
             vm.stopPrank();
         }
 
@@ -50,9 +48,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
 
             // add rule for processor
             vm.startPrank(PROCESSOR_MANAGER);
-            ynBNBx.setProcessorRule(address(slisBnb), IERC20.approve.selector, rule);
-            ynBNBx.setProcessorRule(address(clisBnbStrategy), BaseVault.deposit.selector, rule);
-            ynBNBx.setProcessorRule(address(clisBnbStrategy), BaseVault.withdraw.selector, rule);
+            // only the redeem rule is not added yet
             ynBNBx.setProcessorRule(address(clisBnbStrategy), BaseVault.redeem.selector, rule);
             vm.stopPrank();
         }
@@ -116,6 +112,9 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
             "total assets of ynBNBx should be equal to total assets of ynBNBx before plus deposit amount"
         );
 
+        uint256 totalAssetsBeforeOfClisBnbStrategy = clisBnbStrategy.totalAssets();
+        uint256 totalSupplyBeforeOfClisBnbStrategy = clisBnbStrategy.totalSupply();
+
         // Generate processor tx data to execute all transactions
         address[] memory targets = new address[](2);
         uint256[] memory values = new uint256[](2);
@@ -144,6 +143,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
             "total assets of ynBNBx should be nearly equal to total assets of before processor"
         );
         totalAssetsAfter = ynBNBx.totalAssets();
+
         uint256 slisBnbReceived = slisBnb.balanceOf(address(ynBNBx)) - slisBnbBalanceBefore;
 
         // 3. Deposit SLISBNB to clisBnbStrategy
@@ -183,12 +183,12 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         );
         assertEq(
             clisBnbStrategy.totalAssets(),
-            slisBnbReceived,
+            slisBnbReceived + totalAssetsBeforeOfClisBnbStrategy,
             "total assets of clisBnbStrategy should be equal to slisBnb received"
         );
         assertEq(
             clisBnbStrategy.totalSupply(),
-            expectedClisBnbShare,
+            expectedClisBnbShare + totalSupplyBeforeOfClisBnbStrategy,
             "total supply of clisBnbStrategy should be equal to expected clisBnb share"
         );
         assertApproxEqAbs(
@@ -220,6 +220,9 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
             totalAssetsBefore + depositAmount,
             "total assets of ynBNBx should be equal to total assets of ynBNBx before plus deposit amount"
         );
+
+        uint256 totalSupplyBeforeOfClisBnbStrategy = clisBnbStrategy.totalSupply();
+        uint256 totalAssetsBeforeOfClisBnbStrategy = clisBnbStrategy.totalAssets();
 
         // Generate processor tx data to execute all transactions
         address[] memory targets = new address[](2);
@@ -293,12 +296,12 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         );
         assertEq(
             clisBnbStrategy.totalAssets(),
-            slisBnbReceived,
+            slisBnbReceived + totalAssetsBeforeOfClisBnbStrategy,
             "total assets of clisBnbStrategy should be equal to slisBnb received"
         );
         assertEq(
             clisBnbStrategy.totalSupply(),
-            expectedClisBnbShare,
+            expectedClisBnbShare + totalSupplyBeforeOfClisBnbStrategy,
             "total supply of clisBnbStrategy should be equal to expected clisBnb share"
         );
         assertApproxEqAbs(

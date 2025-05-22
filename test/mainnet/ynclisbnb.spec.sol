@@ -69,8 +69,11 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         assertEq(clisBnbStrategy.decimals(), 18, "Vault decimals should be 18");
 
         // Test the totalSupply function
-        assertEq(clisBnbStrategy.totalSupply(), 0, "Vault totalSupply should be 0 after initialization");
-        assertEq(clisBnbStrategy.totalAssets(), 0, "Vault totalAssets should be 0 after initialization");
+        assertLe(
+            clisBnbStrategy.totalSupply(),
+            clisBnbStrategy.totalAssets(),
+            "Vault totalSupply should be less than or equal to totalAssets"
+        );
     }
 
     function test_Strategy_view_functions() public view {
@@ -103,8 +106,8 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         // Test the totalAssets function
         uint256 totalAssets = clisBnbStrategy.totalAssets();
         uint256 totalSupply = clisBnbStrategy.totalSupply();
-        assertEq(totalAssets, 0, "TotalAssets should be 0");
-        assertEq(totalSupply, 0, "TotalSupply should be 0");
+        assertGe(totalAssets, 1e18, "TotalAssets should be greater than or equal to 1e18");
+        assertGe(totalSupply, 1e18, "TotalSupply should be greater than or equal to 1e18");
 
         // Test the convertToShares function
         uint256 amount = 1 ether;
@@ -665,6 +668,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         uint256 depositorAssetBefore = baseAsset.balanceOf(depositor);
         uint256 vaultStakedSlisBnbBefore = _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy));
         uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
+        uint256 totalAssetsBefore = clisBnbStrategy.totalAssets();
 
         // Give depositor some baseAsset
         deal(address(baseAsset), depositor, depositorAssetBefore + depositAmount);
@@ -678,6 +682,11 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         // Verify deposit was successful
         assertEq(clisBnbStrategy.balanceOf(depositor), shares, "Depositor should receive correct shares");
         assertEq(baseAsset.balanceOf(depositor), depositorAssetBefore, "Depositor's slisBnb should be transferred");
+        assertEq(
+            clisBnbStrategy.totalAssets(),
+            totalAssetsBefore + depositAmount,
+            "Total assets should increase by deposit amount"
+        );
 
         // Verify slisBnb was staked with Lista (since syncDeposit is enabled)
         assertEq(
@@ -722,7 +731,11 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         );
 
         // Total assets should remain the same (just moved from staked to unstaked)
-        assertEq(clisBnbStrategy.totalAssets(), depositAmount, "Total assets should remain unchanged after release");
+        assertEq(
+            clisBnbStrategy.totalAssets(),
+            totalAssetsBefore + depositAmount,
+            "Total assets should remain unchanged after release"
+        );
     }
 
     function test_deposit_and_processor_release_with_withdrawal(
