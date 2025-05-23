@@ -210,6 +210,50 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         );
     }
 
+    function test_Vault_fixed_amount_deposit_and_withdraw() public {
+        uint256 depositAmount = 1000 ether;
+        uint256 withdrawAmount = depositAmount;
+        uint256 totalAssetsBefore = clisBnbStrategy.totalAssets();
+        assertEq(clisBnbStrategy.balanceOf(depositor), 0, "Depositor should have 0 shares before deposit");
+        test_Vault_Deposit_SlisBnb_SyncDeposit_Enabled(depositAmount);
+
+        uint256 totalAssetsAfter = clisBnbStrategy.totalAssets();
+        uint256 shares = clisBnbStrategy.balanceOf(depositor);
+        assertEq(totalAssetsAfter, totalAssetsBefore + depositAmount, "Total assets should increase by deposit amount");
+
+        uint256 slisBnbWithdrawable = clisBnbStrategy.previewRedeem(shares);
+        assertEq(slisBnbWithdrawable, withdrawAmount, "SlisBnb withdrawable should be equal to withdraw amount");
+
+        uint256 slisBnbBalanceOfVaultBefore = slisBnb.balanceOf(address(clisBnbStrategy));
+        uint256 slisBnbBalanceOfDepositorBefore = slisBnb.balanceOf(depositor);
+        uint256 stakedSlisBnbBalanceOfVaultBefore =
+            _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy));
+
+        vm.startPrank(depositor);
+        uint256 sharesWithdrawn = clisBnbStrategy.withdraw(withdrawAmount, depositor, depositor);
+        vm.stopPrank();
+
+        assertEq(
+            slisBnb.balanceOf(address(clisBnbStrategy)),
+            slisBnbBalanceOfVaultBefore,
+            "SlisBnb balance of vault should not change by withdraw"
+        );
+        assertEq(
+            slisBnb.balanceOf(depositor),
+            slisBnbBalanceOfDepositorBefore + withdrawAmount,
+            "SlisBnb balance of depositor should increase by withdraw amount"
+        );
+        assertEq(
+            clisBnbStrategy.balanceOf(depositor), shares - sharesWithdrawn, "Share balance of depositor should be 0"
+        );
+
+        assertEq(
+            _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy)),
+            stakedSlisBnbBalanceOfVaultBefore - withdrawAmount,
+            "Staked slisBnb balance of vault should decrease by withdraw amount"
+        );
+    }
+
     function test_Vault_Multiple_Deposit_SlisBnb_SyncDeposit_Enabled(uint256 depositAmount1, uint256 depositAmount2)
         public
     {
