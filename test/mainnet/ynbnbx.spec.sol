@@ -158,6 +158,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         data[1] =
             abi.encodeWithSelector(bytes4(keccak256("deposit(uint256,address)")), slisBnbReceived, address(ynBNBx));
 
+        uint256 clisBnbStrategyBalanceBefore = clisBnbStrategy.balanceOf(address(ynBNBx));
         uint256 clisBnbBalanceBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
         uint256 expectedClisBnbShare = clisBnbStrategy.previewDeposit(slisBnbReceived);
         vm.startPrank(YNProcessor);
@@ -172,7 +173,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         );
         assertEq(
             clisBnbStrategy.balanceOf(address(ynBNBx)),
-            expectedClisBnbShare,
+            clisBnbStrategyBalanceBefore + expectedClisBnbShare,
             "clisBnbStrategy balance of ynBNBx should be equal to expected clisBnb share"
         );
         assertApproxEqRel(
@@ -266,6 +267,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         data[1] =
             abi.encodeWithSelector(bytes4(keccak256("deposit(uint256,address)")), slisBnbReceived, address(ynBNBx));
 
+        uint256 clisBnbStrategyBalanceBefore = clisBnbStrategy.balanceOf(address(ynBNBx));
         uint256 clisBnbBalanceBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
         uint256 expectedClisBnbShare = clisBnbStrategy.previewDeposit(slisBnbReceived);
         uint256 slisBnbBalanceBeforeOfClisBnbStrategy = slisBnb.balanceOf(address(clisBnbStrategy));
@@ -281,7 +283,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         );
         assertEq(
             clisBnbStrategy.balanceOf(address(ynBNBx)),
-            expectedClisBnbShare,
+            clisBnbStrategyBalanceBefore + expectedClisBnbShare,
             "clisBnbStrategy balance of ynBNBx should be equal to expected clisBnb share"
         );
         assertEq(
