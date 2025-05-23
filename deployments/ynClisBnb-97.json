@@ -1,0 +1,10 @@
+{
+  "admin": "0x72fdBD51085bDa5eEEd3b55D1a46E2e92f0837a5",
+  "deployer": "0x445b64828683ae4B6D5f0542f9E97707d631A847",
+  "rateProvider": "0xE09C84bF9f3a9233Ec0beF99aDFc4D7fb6207011",
+  "symbol": "ynClisBnb",
+  "timelock": "0x5471CBC02926ec5a8C7698Af1b85F2078bbc82a0",
+  "ynClisBnb-implementation": "0xC6Be495FED86806a12430Ad3aD1C73d75B2aC2FE",
+  "ynClisBnb-proxy": "0xAD5214565030904E70b09Ef8936e2Fc26F8e9c77",
+  "ynClisBnb-proxyAdmin": "0x7586ab5b31D7642cbb2348CCAf9cd236D71dA5FC"
+}
