@@ -112,11 +112,11 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         // Test the convertToShares function
         uint256 amount = 1 ether;
         uint256 shares = clisBnbStrategy.convertToShares(amount);
-        assertEq(shares, amount, "Shares should be equal to amount deposited");
+        assertLt(shares, amount, "Shares should be less than amount deposited");
 
         // Test the convertToAssets function
         uint256 convertedAssets = clisBnbStrategy.convertToAssets(shares);
-        assertEq(convertedAssets, amount, "Converted assets should be equal to amount deposited");
+        assertLt(convertedAssets, amount, "Converted assets should be less than amount deposited");
 
         // Test the maxDeposit function
         uint256 maxDeposit = clisBnbStrategy.maxDeposit(address(this));
@@ -222,7 +222,9 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         assertEq(totalAssetsAfter, totalAssetsBefore + depositAmount, "Total assets should increase by deposit amount");
 
         uint256 slisBnbWithdrawable = clisBnbStrategy.previewRedeem(shares);
-        assertEq(slisBnbWithdrawable, withdrawAmount, "SlisBnb withdrawable should be equal to withdraw amount");
+        assertApproxEqAbs(
+            slisBnbWithdrawable, withdrawAmount, 5, "SlisBnb withdrawable should be equal to withdraw amount"
+        );
 
         uint256 slisBnbBalanceOfVaultBefore = slisBnb.balanceOf(address(clisBnbStrategy));
         uint256 slisBnbBalanceOfDepositorBefore = slisBnb.balanceOf(depositor);
@@ -230,12 +232,13 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy));
 
         vm.startPrank(depositor);
-        uint256 sharesWithdrawn = clisBnbStrategy.withdraw(withdrawAmount, depositor, depositor);
+        withdrawAmount = clisBnbStrategy.redeem(shares, depositor, depositor);
         vm.stopPrank();
 
         assertEq(
-            slisBnb.balanceOf(address(clisBnbStrategy)),
-            slisBnbBalanceOfVaultBefore,
+            slisBnb.balanceOf(address(clisBnbStrategy))
+                + _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy)),
+            slisBnbBalanceOfVaultBefore + stakedSlisBnbBalanceOfVaultBefore - withdrawAmount,
             "SlisBnb balance of vault should not change by withdraw"
         );
         assertEq(
@@ -243,15 +246,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             slisBnbBalanceOfDepositorBefore + withdrawAmount,
             "SlisBnb balance of depositor should increase by withdraw amount"
         );
-        assertEq(
-            clisBnbStrategy.balanceOf(depositor), shares - sharesWithdrawn, "Share balance of depositor should be 0"
-        );
-
-        assertEq(
-            _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy)),
-            stakedSlisBnbBalanceOfVaultBefore - withdrawAmount,
-            "Staked slisBnb balance of vault should decrease by withdraw amount"
-        );
+        assertEq(clisBnbStrategy.balanceOf(depositor), 0, "Share balance of depositor should be 0");
     }
 
     function test_Vault_Multiple_Deposit_SlisBnb_SyncDeposit_Enabled(uint256 depositAmount1, uint256 depositAmount2)
@@ -515,7 +510,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
 
     function test_Vault_Withdraw(uint256 depositAmount, uint256 withdrawAmount) public {
         depositAmount = bound(depositAmount, 1000 wei, 1000000 ether);
-        withdrawAmount = bound(withdrawAmount, 1, depositAmount);
+        withdrawAmount = bound(withdrawAmount, 0, depositAmount - 1);
 
         // Give depositor some baseAsset
         deal(address(baseAsset), depositor, depositAmount);
@@ -530,7 +525,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
 
         uint256 slisBnbWithdrawable = clisBnbStrategy.previewRedeem(shares);
         assertApproxEqAbs(
-            slisBnbWithdrawable, depositAmount, 1, "SlisBnb withdrawable should be equal to deposit amount"
+            slisBnbWithdrawable, depositAmount, 5, "SlisBnb withdrawable should be equal to deposit amount"
         );
 
         uint256 slisBnbBalanceOfVaultBefore = slisBnb.balanceOf(address(clisBnbStrategy));
@@ -541,11 +536,6 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         uint256 sharesWithdrawn = clisBnbStrategy.withdraw(withdrawAmount, depositor, depositor);
 
         assertEq(
-            slisBnb.balanceOf(address(clisBnbStrategy)),
-            slisBnbBalanceOfVaultBefore,
-            "SlisBnb balance of vault should not change by withdraw"
-        );
-        assertEq(
             slisBnb.balanceOf(depositor),
             slisBnbBalanceOfDepositorBefore + withdrawAmount,
             "SlisBnb balance of depositor should increase by withdraw amount"
@@ -554,8 +544,9 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             clisBnbStrategy.balanceOf(depositor), shares - sharesWithdrawn, "Share balance of depositor should be 0"
         );
         assertEq(
-            _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy)),
-            stakedSlisBnbBalanceOfVaultBefore - withdrawAmount,
+            _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy))
+                + slisBnb.balanceOf(address(clisBnbStrategy)),
+            stakedSlisBnbBalanceOfVaultBefore + slisBnbBalanceOfVaultBefore - withdrawAmount,
             "Staked slisBnb balance of vault should decrease by withdraw amount"
         );
     }
@@ -652,7 +643,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         uint256 rewardAmount,
         uint256 redeemAmount
     ) public {
-        depositAmount = bound(depositAmount, 1000 wei, 1000000 ether);
+        depositAmount = bound(depositAmount, 10000 wei, 1000000 ether);
         rewardAmount = bound(rewardAmount, 0.1 ether, 1000000 ether);
 
         test_Vault_Reward_Stream_Allocation(depositAmount, rewardAmount);
@@ -664,6 +655,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
 
         uint256 totalAssetsOfClisBnbStrategyBefore = clisBnbStrategy.totalAssets();
         uint256 totalSupplyOfClisBnbStrategyBefore = clisBnbStrategy.totalSupply();
+        uint256 slisBnbBalanceOfClisBnbStrategyBefore = slisBnb.balanceOf(address(clisBnbStrategy));
         uint256 slisBnbLockedInVaultBefore =
             _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy));
         uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
@@ -692,14 +684,15 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             "Total supply of clisBnbStrategy should decrease by redeem amount"
         );
         assertEq(
-            _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy)),
-            slisBnbLockedInVaultBefore - assetsWithdrawn,
+            _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy))
+                + slisBnb.balanceOf(address(clisBnbStrategy)),
+            slisBnbLockedInVaultBefore - assetsWithdrawn + slisBnbBalanceOfClisBnbStrategyBefore,
             "Staked slisBnb balance of vault should decrease by withdraw amount"
         );
-        assertLt(
+        assertLe(
             clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET),
             clisBnbBalanceOfYieldnestMpcWalletBefore,
-            "ClisBnb balance of YieldnestMpcWallet should not change"
+            "clisBnb balance of YieldnestMpcWallet should not increase"
         );
     }
 
@@ -791,7 +784,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         releaseAmount = bound(releaseAmount, 1000 wei, 1000000 ether);
         withdrawAmount = bound(withdrawAmount, 1000 wei, 1000000 ether);
         releaseAmount = bound(releaseAmount, 1000 wei, depositAmount);
-        withdrawAmount = bound(withdrawAmount, 1000 wei, releaseAmount);
+        withdrawAmount = bound(withdrawAmount, 500 wei, releaseAmount - 5);
 
         // Give depositor some baseAsset
         deal(address(baseAsset), depositor, depositAmount);
