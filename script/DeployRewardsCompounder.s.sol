@@ -58,6 +58,11 @@ contract DeployRewardsCompounder is BaseScript, Test {
     }
 
     function _deploymentFilePath() internal view virtual override returns (string memory) {
+        if (deploymentEnv == Env.TEST) {
+            return string.concat(
+                vm.projectRoot(), "/deployments/", "test-", symbol(), "-", Strings.toString(block.chainid), ".json"
+            );
+        }
         return string.concat(vm.projectRoot(), "/deployments/", symbol(), "-", Strings.toString(block.chainid), ".json");
     }
 
@@ -66,8 +71,7 @@ contract DeployRewardsCompounder is BaseScript, Test {
         vm.serializeAddress(symbol(), "deployer", deployer);
         vm.serializeAddress(symbol(), "owner", owner);
 
-        string memory jsonOutput =
-            vm.serializeAddress(symbol(), string.concat(symbol(), "rewardsCompounder"), address(rewardsCompounder));
+        string memory jsonOutput = vm.serializeAddress(symbol(), "rewardsCompounder", address(rewardsCompounder));
         vm.writeJson(jsonOutput, _deploymentFilePath());
     }
 }

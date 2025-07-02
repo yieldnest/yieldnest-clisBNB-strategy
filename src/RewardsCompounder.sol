@@ -11,7 +11,6 @@ import {ISlisBnbProvider} from "src/interfaces/ISlisBnbProvider.sol";
  * @notice This contract is used to compound rewards sent to the strategy.
  */
 contract RewardsCompounder is Ownable {
-
     // @notice The strategy contract.
     ClisBnbStrategy public strategy;
 
@@ -40,7 +39,6 @@ contract RewardsCompounder is Ownable {
      * @dev This function will be called by keeper and it will compound rewards if there are enough rewards.
      */
     function compoundRewards() external {
-
         if (!shouldCompoundRewards()) {
             revert NotEnoughRewardsToCompound();
         }
@@ -57,7 +55,8 @@ contract RewardsCompounder is Ownable {
 
         targets[1] = address(strategy.slisBnbProvider());
         values[1] = 0;
-        data[1] = abi.encodeWithSelector(ISlisBnbProvider.provide.selector, amountToCompound, strategy.yieldNestMpcWallet());
+        data[1] =
+            abi.encodeWithSelector(ISlisBnbProvider.provide.selector, amountToCompound, strategy.yieldNestMpcWallet());
 
         strategy.processor(targets, values, data);
     }
@@ -78,4 +77,3 @@ contract RewardsCompounder is Ownable {
         minRewardsToCompound = _minRewardsToCompound;
     }
 }
-
