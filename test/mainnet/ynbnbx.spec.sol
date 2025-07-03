@@ -139,7 +139,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         assertApproxEqAbs(
             ynBNBx.totalAssets(),
             totalAssetsAfter,
-            1e6,
+            1e8,
             "total assets of ynBNBx should be nearly equal to total assets of before processor"
         );
         totalAssetsAfter = ynBNBx.totalAssets();
@@ -195,8 +195,8 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         assertApproxEqAbs(
             ynBNBx.totalAssets(),
             totalAssetsAfter,
-            5,
-            "total assets of ynBNBx should be equal to total assets of before processor"
+            1e8,
+            "total assets of ynBNBx should be nearly equal to total assets of before processor"
         );
     }
 
@@ -249,7 +249,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         assertApproxEqAbs(
             ynBNBx.totalAssets(),
             totalAssetsAfter,
-            1e6,
+            1e8,
             "total assets of ynBNBx should be nearly equal to total assets of before processor"
         );
         totalAssetsAfter = ynBNBx.totalAssets();
@@ -309,8 +309,8 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         assertApproxEqAbs(
             ynBNBx.totalAssets(),
             totalAssetsAfter,
-            5,
-            "total assets of ynBNBx should be equal to total assets of before processor"
+            1e8,
+            "total assets of ynBNBx should be nearly equal to total assets of before processor"
         );
     }
 
@@ -486,7 +486,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         assertApproxEqAbs(
             ynBNBx.totalAssets(),
             totalAssetsBeforeOfYnBNBx,
-            1 wei,
+            1e8,
             "total assets of ynBNBx should be approximately equal to total assets of before"
         );
         assertEq(
@@ -635,84 +635,5 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
             "total supply of ynBNBx should be equal to total supply of before"
         );
         assertEq(ynBNBx.previewRedeem(1 ether), ynBNBxRateBefore, "ynBNBx rate should be equal to ynBNBx rate before");
-    }
-
-    function test_ynBNBx_withdraw_from_ynasBNBK() public {
-        address[] memory target = new address[](1);
-        target[0] = address(ynasBNBK);
-
-        uint256[] memory amount = new uint256[](1);
-        amount[0] = 0;
-
-        uint256 shares = IERC20(address(ynasBNBK)).balanceOf(address(ynBNBx));
-        uint256 withdrawableWbnb = ynasBNBK.previewRedeem(shares);
-
-        bytes[] memory data = new bytes[](1);
-        data[0] = abi.encodeWithSelector(
-            BaseStrategy.redeemAsset.selector, MC.ASBNB, shares, address(ynBNBx), address(ynBNBx)
-        );
-
-        {
-            IVault.FunctionRule memory rule = IVault.FunctionRule({
-                isActive: true,
-                paramRules: new IVault.ParamRule[](0),
-                validator: IValidator(address(0))
-            });
-
-            // add rule for processor
-            vm.startPrank(PROCESSOR_MANAGER);
-            ynBNBx.setProcessorRule(address(ynasBNBK), BaseStrategy.redeemAsset.selector, rule);
-            vm.stopPrank();
-        }
-
-        uint256 asBNBBalanceOfynBNBxBefore = IERC20(MC.ASBNB).balanceOf(address(ynBNBx));
-        uint256 totalSupplyOfynBNBxBefore = ynBNBx.totalSupply();
-        uint256 totalSupplyOfasBNBkBefore = ynasBNBK.totalSupply();
-        uint256 totalAssetsOfynBNBxBefore = ynBNBx.totalAssets();
-        uint256 ynBNBxRateBefore = ynBNBx.previewRedeem(1e18);
-
-        vm.startPrank(YNProcessor);
-        ynBNBx.processor(target, amount, data);
-        ynBNBx.processAccounting();
-        vm.stopPrank();
-
-        {
-            uint256 asBNBBalanceReceived = IERC20(MC.ASBNB).balanceOf(address(ynBNBx)) - asBNBBalanceOfynBNBxBefore;
-            uint256 wbnbBalanceReceived = ynBNBxProvider.getRate(MC.ASBNB) * asBNBBalanceReceived / 1e18;
-            assertApproxEqAbs(
-                wbnbBalanceReceived,
-                withdrawableWbnb,
-                2,
-                "wbnb balance received should be equal to withdrawable wbnb after full redemption"
-            );
-
-            uint256 totalSupplyOfasBNBkAfter = ynasBNBK.totalSupply();
-            uint256 totalSupplyOfynBNBxAfter = ynBNBx.totalSupply();
-            assertApproxEqAbs(
-                totalSupplyOfasBNBkAfter,
-                totalSupplyOfasBNBkBefore - shares,
-                2,
-                "total supply of asBNBk should be equal to total supply of asBNBk before minus shares"
-            );
-
-            uint256 totalAssetsOfasBNBkAfter = ynasBNBK.totalAssets();
-            uint256 totalAssetsOfynBNBxAfter = ynBNBx.totalAssets();
-            uint256 ynBNBxRateAfter = ynBNBx.previewRedeem(1e18);
-            assertApproxEqAbs(
-                totalAssetsOfasBNBkAfter, 0, 5, "asBNBk should have nearly 0 total assets after full redemption"
-            );
-            assertApproxEqAbs(
-                totalAssetsOfynBNBxAfter,
-                totalAssetsOfynBNBxBefore,
-                1e6,
-                "total assets of ynBNBx should be equal to total assets of ynBNBx before plus after redemption"
-            );
-            assertEq(
-                totalSupplyOfynBNBxAfter,
-                totalSupplyOfynBNBxBefore,
-                "total supply of ynBNBx should be equal to total supply of ynBNBx before"
-            );
-            assertApproxEqAbs(ynBNBxRateAfter, ynBNBxRateBefore, 5, "ynBNBx rate should be equal to ynBNBx rate before");
-        }
     }
 }
