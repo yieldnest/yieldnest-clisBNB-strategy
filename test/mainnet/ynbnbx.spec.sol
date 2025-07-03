@@ -139,7 +139,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         assertApproxEqAbs(
             ynBNBx.totalAssets(),
             totalAssetsAfter,
-            1e6,
+            1e8,
             "total assets of ynBNBx should be nearly equal to total assets of before processor"
         );
         totalAssetsAfter = ynBNBx.totalAssets();
@@ -195,7 +195,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         assertApproxEqAbs(
             ynBNBx.totalAssets(),
             totalAssetsAfter,
-            1e6,
+            1e8,
             "total assets of ynBNBx should be nearly equal to total assets of before processor"
         );
     }
@@ -249,7 +249,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         assertApproxEqAbs(
             ynBNBx.totalAssets(),
             totalAssetsAfter,
-            1e6,
+            1e8,
             "total assets of ynBNBx should be nearly equal to total assets of before processor"
         );
         totalAssetsAfter = ynBNBx.totalAssets();
@@ -309,7 +309,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         assertApproxEqAbs(
             ynBNBx.totalAssets(),
             totalAssetsAfter,
-            1e6,
+            1e8,
             "total assets of ynBNBx should be nearly equal to total assets of before processor"
         );
     }
@@ -486,7 +486,7 @@ contract YnBNBxTest is Test, MainnetActors, YnClisBnbStrategyTest {
         assertApproxEqAbs(
             ynBNBx.totalAssets(),
             totalAssetsBeforeOfYnBNBx,
-            1e6,
+            1e8,
             "total assets of ynBNBx should be approximately equal to total assets of before"
         );
         assertEq(

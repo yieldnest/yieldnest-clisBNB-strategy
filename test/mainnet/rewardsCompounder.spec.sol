@@ -21,25 +21,16 @@ contract RewardsCompounderTest is Test, MainnetActors {
     Interaction public interaction = Interaction(MC.INTERACTION);
 
     function setUp() public {
-        deployRewardsCompounder = new DeployRewardsCompounder();
-        deployRewardsCompounder.setEnv(DeployRewardsCompounder.Env.TEST);
-        deployRewardsCompounder.setMinRewardsToCompound(minRewardsToCompound);
-        deployRewardsCompounder.setOwner(owner);
-
-        deployRewardsCompounder.run();
-
-        rewardsCompounder = RewardsCompounder(deployRewardsCompounder.rewardsCompounder());
+        rewardsCompounder = RewardsCompounder(MC.REWARDS_COMPOUNDER);
 
         vm.startPrank(ADMIN);
-        deployRewardsCompounder.clisBnbStrategy().grantRole(
-            clisBnbStrategy.PROCESSOR_ROLE(), address(rewardsCompounder)
-        );
+        clisBnbStrategy.grantRole(clisBnbStrategy.PROCESSOR_ROLE(), address(rewardsCompounder));
         vm.stopPrank();
     }
 
     function test_deploy_success() public view {
         assertNotEq(address(rewardsCompounder), address(0), "rewardsCompounder should be deployed");
-        assertEq(address(rewardsCompounder.strategy()), address(deployRewardsCompounder.clisBnbStrategy()));
+        assertEq(address(rewardsCompounder.strategy()), address(clisBnbStrategy));
         assertEq(address(rewardsCompounder.slisBnb()), MC.SLIS_BNB);
         assertEq(rewardsCompounder.minRewardsToCompound(), minRewardsToCompound);
         assertEq(rewardsCompounder.owner(), owner);

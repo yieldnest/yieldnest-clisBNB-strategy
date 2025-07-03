@@ -18,6 +18,7 @@ interface IContracts {
     function BNBX() external view returns (address);
     function BNBX_STAKE_MANAGER() external view returns (address);
     function CLIS_BNB_STRATEGY() external view returns (address);
+    function REWARDS_COMPOUNDER() external view returns (address);
 }
 
 library MainnetContracts {
@@ -43,6 +44,7 @@ library MainnetContracts {
     address public constant BNBX = 0x1bdd3Cf7F79cfB8EdbB955f20ad99211551BA275;
     address public constant BNBX_STAKE_MANAGER = 0x3b961e83400D51e6E1AF5c450d3C7d7b80588d28;
     address public constant CLIS_BNB_STRATEGY = 0x1cBfbC3CB909Fb0BF0E511AFAe6cDBa6ba5e2252;
+    address public constant REWARDS_COMPOUNDER = 0x3AD977B6D2AfbB3d79b111522d3DcdeBFcE6A7e9;
 }
 
 library TestnetContracts {
@@ -63,6 +65,7 @@ library TestnetContracts {
     address public constant BNBX = 0x0000000000000000000000000000000000000000;
     address public constant BNBX_STAKE_MANAGER = 0x0000000000000000000000000000000000000000;
     address public constant CLIS_BNB_STRATEGY = 0xAD5214565030904E70b09Ef8936e2Fc26F8e9c77;
+    address public constant REWARDS_COMPOUNDER = 0x0000000000000000000000000000000000000000;
 }
 
 contract BscContracts is IContracts {
@@ -129,6 +132,10 @@ contract BscContracts is IContracts {
     function CLIS_BNB_STRATEGY() external pure returns (address) {
         return MainnetContracts.CLIS_BNB_STRATEGY;
     }
+
+    function REWARDS_COMPOUNDER() external pure returns (address) {
+        return MainnetContracts.REWARDS_COMPOUNDER;
+    }
 }
 
 contract ChapelContracts is IContracts {
@@ -194,5 +201,9 @@ contract ChapelContracts is IContracts {
 
     function CLIS_BNB_STRATEGY() external pure returns (address) {
         return TestnetContracts.CLIS_BNB_STRATEGY;
+    }
+
+    function REWARDS_COMPOUNDER() external pure returns (address) {
+        return TestnetContracts.REWARDS_COMPOUNDER;
     }
 }
