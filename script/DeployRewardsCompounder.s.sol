@@ -8,8 +8,9 @@ import {console} from "lib/forge-std/src/console.sol";
 import {Test} from "lib/forge-std/src/Test.sol";
 import {Strings} from "lib/openzeppelin-contracts/contracts/utils/Strings.sol";
 import {ClisBnbStrategy} from "src/ClisBnbStrategy.sol";
+import {MainnetActors} from "script/Actors.sol";
 
-contract DeployRewardsCompounder is BaseScript, Test {
+contract DeployRewardsCompounder is BaseScript, Test, MainnetActors {
     using stdJson for string;
 
     enum Env {
@@ -18,8 +19,8 @@ contract DeployRewardsCompounder is BaseScript, Test {
     }
 
     RewardsCompounder public rewardsCompounder;
-    uint256 public minRewardsToCompound;
-    address public owner;
+    uint256 public minRewardsToCompound = 5 ether;
+    address public owner = YNProcessor;
     Env public deploymentEnv = Env.PROD;
 
     function symbol() public pure override returns (string memory) {
