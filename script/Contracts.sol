@@ -3,7 +3,8 @@ pragma solidity ^0.8.24;
 
 interface IContracts {
     function SLIS_BNB_PROVIDER() external view returns (address);
-    function YIELDNEST_MPC_WALLET() external view returns (address);
+    function OLD_YIELDNEST_MPC_WALLET() external view returns (address);
+    function NEW_YIELDNEST_MPC_WALLET() external view returns (address);
     function SLIS_BNB() external view returns (address);
     function WBNB() external view returns (address);
     function SLIS_BNB_STAKE_MANAGER() external view returns (address);
@@ -28,7 +29,9 @@ library MainnetContracts {
     address public constant YNBNBX = 0x32C830f5c34122C6afB8aE87ABA541B7900a2C5F;
 
     address public constant SLIS_BNB_PROVIDER = 0xfD31e1C5e5571f8E7FE318f80888C1e6da97819b;
-    address public constant YIELDNEST_MPC_WALLET = 0x24bcA21172B564474734Ae25900663BCC964d92b;
+    address public constant OLD_YIELDNEST_MPC_WALLET = 0x24bcA21172B564474734Ae25900663BCC964d92b;
+    // todo: update to new MPC wallet
+    address public constant NEW_YIELDNEST_MPC_WALLET = address(1);
     address public constant SLIS_BNB = 0xB0b84D294e0C75A6abe60171b70edEb2EFd14A1B;
     address public constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address public constant SLIS_BNB_STAKE_MANAGER = 0x1adB950d8bB3dA4bE104211D5AB038628e477fE6;
@@ -53,7 +56,9 @@ library TestnetContracts {
     address public constant SLIS_BNB_PROVIDER = 0x11f6aDcb73473FD7bdd15f32df65Fa3ECdD0Bc20;
     address public constant INTERACTION = 0x70C4880A3f022b32810a4E9B9F26218Ec026f279;
     address public constant WBNB = 0x2F472b32b8041E51e53EeC52e87c7060EA9C7eE8;
-    address public constant YIELDNEST_MPC_WALLET = 0x24bcA21172B564474734Ae25900663BCC964d92b;
+    address public constant OLD_YIELDNEST_MPC_WALLET = 0x24bcA21172B564474734Ae25900663BCC964d92b;
+    // todo: update to new MPC wallet
+    address public constant NEW_YIELDNEST_MPC_WALLET = address(1);
     address public constant SLIS_BNB_STAKE_MANAGER = 0xc695F964011a5a1024931E2AF0116afBaC41B31B;
     address public constant YNBNBX = 0x0000000000000000000000000000000000000000;
     address public constant AS_BNB_MINTER = 0x0000000000000000000000000000000000000000;
@@ -73,8 +78,12 @@ contract BscContracts is IContracts {
         return MainnetContracts.SLIS_BNB_PROVIDER;
     }
 
-    function YIELDNEST_MPC_WALLET() external pure returns (address) {
-        return MainnetContracts.YIELDNEST_MPC_WALLET;
+    function OLD_YIELDNEST_MPC_WALLET() external pure returns (address) {
+        return MainnetContracts.OLD_YIELDNEST_MPC_WALLET;
+    }
+
+    function NEW_YIELDNEST_MPC_WALLET() external pure returns (address) {
+        return MainnetContracts.NEW_YIELDNEST_MPC_WALLET;
     }
 
     function SLIS_BNB() external pure returns (address) {
@@ -143,8 +152,12 @@ contract ChapelContracts is IContracts {
         return TestnetContracts.SLIS_BNB_PROVIDER;
     }
 
-    function YIELDNEST_MPC_WALLET() external pure returns (address) {
-        return TestnetContracts.YIELDNEST_MPC_WALLET;
+    function OLD_YIELDNEST_MPC_WALLET() external pure returns (address) {
+        return TestnetContracts.OLD_YIELDNEST_MPC_WALLET;
+    }
+
+    function NEW_YIELDNEST_MPC_WALLET() external pure returns (address) {
+        return TestnetContracts.NEW_YIELDNEST_MPC_WALLET;
     }
 
     function SLIS_BNB() external pure returns (address) {

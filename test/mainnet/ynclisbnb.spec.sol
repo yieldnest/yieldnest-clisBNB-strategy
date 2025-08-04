@@ -92,7 +92,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         );
         assertEq(
             clisBnbStrategy.yieldNestMpcWallet(),
-            MC.YIELDNEST_MPC_WALLET,
+            MC.OLD_YIELDNEST_MPC_WALLET,
             "Vault yieldNestMpcWallet should be YIELDNEST_MPC_WALLET"
         );
         assertEq(address(clisBnbStrategy.slisBnb()), MC.SLIS_BNB, "Vault slisBnb should be SLIS_BNB");
@@ -169,7 +169,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             "Asset balance of depositor incorrect after deal"
         );
 
-        uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
+        uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.OLD_YIELDNEST_MPC_WALLET);
         vm.startPrank(depositor);
         // Approve vault to spend Asset
         baseAsset.approve(address(clisBnbStrategy), depositAmount);
@@ -203,7 +203,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         );
 
         assertApproxEqRel(
-            clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET),
+            clisBnb.balanceOf(MC.OLD_YIELDNEST_MPC_WALLET),
             clisBnbBalanceOfYieldnestMpcWalletBefore + _calculateClisBnbFromSlisBnb(depositAmount),
             1,
             "ClisBnb balance of YieldnestMpcWallet should increase by deposit amount adjusted by exchange rate"
@@ -281,7 +281,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             depositorAssetBefore + depositAmount,
             "Asset balance of depositor incorrect after deal"
         );
-        uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
+        uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.OLD_YIELDNEST_MPC_WALLET);
         vm.startPrank(depositor);
         // Approve vault to spend Asset
         baseAsset.approve(address(clisBnbStrategy), depositAmount);
@@ -320,7 +320,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             "Vault's slisBnb balance should increase by deposit amount after deposit"
         );
         assertEq(
-            clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET),
+            clisBnb.balanceOf(MC.OLD_YIELDNEST_MPC_WALLET),
             clisBnbBalanceOfYieldnestMpcWalletBefore,
             "ClisBnb balance of YieldnestMpcWallet should not change by deposit when syncDeposit is disabled"
         );
@@ -562,7 +562,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         uint256 totalSupplyBefore = clisBnbStrategy.totalSupply();
         uint256 slisBnbLockedInVaultBefore =
             _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy));
-        uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
+        uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.OLD_YIELDNEST_MPC_WALLET);
 
         vm.startPrank(DEPOSIT_MANAGER);
         slisBnb.transfer(address(clisBnbStrategy), rewardAmount);
@@ -584,7 +584,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         assertEq(totalSupplyAfter, totalSupplyBefore, "Total supply of vault should not change");
         assertEq(slisBnbLockedInVaultAfter, slisBnbLockedInVaultBefore, "SlisBnb locked in vault should not change");
         assertEq(
-            clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET),
+            clisBnb.balanceOf(MC.OLD_YIELDNEST_MPC_WALLET),
             clisBnbBalanceOfYieldnestMpcWalletBefore,
             "ClisBnb balance of YieldnestMpcWallet should not change"
         );
@@ -600,7 +600,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         uint256 clisBnbStrategyRate = clisBnbStrategy.previewRedeem(1 ether);
         uint256 slisBnbLockedInVaultBefore =
             _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy));
-        uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
+        uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.OLD_YIELDNEST_MPC_WALLET);
 
         {
             vm.startPrank(PROCESSOR);
@@ -612,7 +612,8 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             datas[0] = abi.encodeWithSelector(IERC20.approve.selector, MC.SLIS_BNB_PROVIDER, rewardAmount);
             targets[1] = MC.SLIS_BNB_PROVIDER;
             values[1] = 0;
-            datas[1] = abi.encodeWithSelector(ISlisBnbProvider.provide.selector, rewardAmount, MC.YIELDNEST_MPC_WALLET);
+            datas[1] =
+                abi.encodeWithSelector(ISlisBnbProvider.provide.selector, rewardAmount, MC.OLD_YIELDNEST_MPC_WALLET);
             clisBnbStrategy.processor(targets, values, datas);
             vm.stopPrank();
         }
@@ -631,7 +632,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             "SlisBnb locked in vault should increase by reward amount"
         );
         assertApproxEqRel(
-            clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET),
+            clisBnb.balanceOf(MC.OLD_YIELDNEST_MPC_WALLET),
             clisBnbBalanceOfYieldnestMpcWalletBefore + _calculateClisBnbFromSlisBnb(rewardAmount),
             1,
             "ClisBnb balance of YieldnestMpcWallet should increase by reward amount adjusted by exchange rate"
@@ -658,7 +659,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         uint256 slisBnbBalanceOfClisBnbStrategyBefore = slisBnb.balanceOf(address(clisBnbStrategy));
         uint256 slisBnbLockedInVaultBefore =
             _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy));
-        uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
+        uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.OLD_YIELDNEST_MPC_WALLET);
         uint256 slisBnbBalanceOfDepositorBefore = slisBnb.balanceOf(depositor);
 
         vm.startPrank(depositor);
@@ -690,7 +691,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             "Staked slisBnb balance of vault should decrease by withdraw amount"
         );
         assertLe(
-            clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET),
+            clisBnb.balanceOf(MC.OLD_YIELDNEST_MPC_WALLET),
             clisBnbBalanceOfYieldnestMpcWalletBefore,
             "clisBnb balance of YieldnestMpcWallet should not increase"
         );
@@ -704,7 +705,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
         // Initial balances
         uint256 depositorAssetBefore = baseAsset.balanceOf(depositor);
         uint256 vaultStakedSlisBnbBefore = _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy));
-        uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET);
+        uint256 clisBnbBalanceOfYieldnestMpcWalletBefore = clisBnb.balanceOf(MC.OLD_YIELDNEST_MPC_WALLET);
         uint256 totalAssetsBefore = clisBnbStrategy.totalAssets();
 
         // Give depositor some baseAsset
@@ -732,7 +733,7 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             "Staked slisBnb balance should increase by deposit amount"
         );
         assertGt(
-            clisBnb.balanceOf(MC.YIELDNEST_MPC_WALLET),
+            clisBnb.balanceOf(MC.OLD_YIELDNEST_MPC_WALLET),
             clisBnbBalanceOfYieldnestMpcWalletBefore,
             "YieldNest MPC wallet should receive clisBnb"
         );
@@ -920,6 +921,112 @@ contract YnClisBnbStrategyTest is Test, MainnetActors {
             wbnb.balanceOf(address(clisBnbStrategy)),
             wbnbBalanceBeforeOfClisBnbStrategy + depositAmount,
             "Wbnb balance of clisBnbStrategy should increase by deposit amount"
+        );
+    }
+
+    function test_MPC_wallet_migration() public {
+        address newYieldNestMpcWallet = MC.NEW_YIELDNEST_MPC_WALLET;
+
+        uint256 totalAssetsOfClisBnbStrategyBefore = clisBnbStrategy.totalAssets();
+        uint256 totalSupplyOfClisBnbStrategyBefore = clisBnbStrategy.totalSupply();
+        uint256 totalAssetsOfYnBNBXBefore = IVault(MC.YNBNBX).totalAssets();
+        uint256 totalSupplyOfYnBNBXBefore = IVault(MC.YNBNBX).totalSupply();
+        uint256 slisBNBStakedBefore = _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy));
+        uint256 slisBNBBalanceOfClisBnbStrategyBefore = slisBnb.balanceOf(address(clisBnbStrategy));
+
+        address[] memory targets = new address[](1);
+        uint256[] memory values = new uint256[](1);
+        bytes[] memory datas = new bytes[](1);
+        targets[0] = MC.SLIS_BNB_PROVIDER;
+        values[0] = 0;
+        datas[0] =
+            abi.encodeWithSelector(ISlisBnbProvider.release.selector, address(clisBnbStrategy), slisBNBStakedBefore);
+
+        // pull back all the slisBNB delegated to old MPC wallet to strategy
+        vm.startPrank(PROCESSOR);
+        clisBnbStrategy.processor(targets, values, datas);
+        vm.stopPrank();
+
+        assertEq(
+            _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy)),
+            0,
+            "SlisBNB should be released to strategy"
+        );
+        assertEq(
+            slisBnb.balanceOf(address(clisBnbStrategy)),
+            slisBNBBalanceOfClisBnbStrategyBefore + slisBNBStakedBefore,
+            "SlisBNB should be released to strategy"
+        );
+        assertEq(
+            clisBnbStrategy.totalAssets(),
+            totalAssetsOfClisBnbStrategyBefore,
+            "Total assets of clisBnbStrategy should not change"
+        );
+        assertEq(
+            clisBnbStrategy.totalSupply(),
+            totalSupplyOfClisBnbStrategyBefore,
+            "Total supply of clisBnbStrategy should not change"
+        );
+        assertEq(IVault(MC.YNBNBX).totalAssets(), totalAssetsOfYnBNBXBefore, "Total assets of ynBNBX should not change");
+        assertEq(IVault(MC.YNBNBX).totalSupply(), totalSupplyOfYnBNBXBefore, "Total supply of ynBNBX should not change");
+        assertEq(clisBnb.balanceOf(newYieldNestMpcWallet), 0, "ClisBNB balance of newYieldNestMpcWallet should be 0");
+
+        // set new MPC wallet
+        vm.startPrank(ADMIN);
+        clisBnbStrategy.setYieldNestMpcWallet(newYieldNestMpcWallet); // set new MPC wallet
+        vm.stopPrank();
+
+        // set provider rule to new MPC wallet
+        SafeRules.RuleParams[] memory rules = new SafeRules.RuleParams[](1);
+        rules[0] = ProvideRules.getProvideRule(MC.SLIS_BNB_PROVIDER, newYieldNestMpcWallet);
+
+        vm.startPrank(timelock);
+        SafeRules.setProcessorRules(clisBnbStrategy, rules, true);
+        vm.stopPrank();
+
+        targets = new address[](2);
+        values = new uint256[](2);
+        datas = new bytes[](2);
+
+        targets[0] = MC.SLIS_BNB;
+        values[0] = 0;
+        datas[0] = abi.encodeWithSelector(IERC20.approve.selector, MC.SLIS_BNB_PROVIDER, slisBNBStakedBefore);
+
+        targets[1] = MC.SLIS_BNB_PROVIDER;
+        values[1] = 0;
+        datas[1] = abi.encodeWithSelector(ISlisBnbProvider.provide.selector, slisBNBStakedBefore, newYieldNestMpcWallet);
+
+        vm.startPrank(PROCESSOR);
+        clisBnbStrategy.processor(targets, values, datas);
+        vm.stopPrank();
+
+        assertEq(
+            _getStakedSlisBnbBalanceByVault(address(baseAsset), address(clisBnbStrategy)),
+            slisBNBStakedBefore,
+            "SlisBNB should be staked to new MPC wallet"
+        );
+        assertEq(
+            slisBnb.balanceOf(address(clisBnbStrategy)),
+            slisBNBBalanceOfClisBnbStrategyBefore,
+            "SlisBNB balance of clisBnbStrategy should not change"
+        );
+        assertEq(
+            clisBnbStrategy.totalAssets(),
+            totalAssetsOfClisBnbStrategyBefore,
+            "Total assets of clisBnbStrategy should not change"
+        );
+        assertEq(
+            clisBnbStrategy.totalSupply(),
+            totalSupplyOfClisBnbStrategyBefore,
+            "Total supply of clisBnbStrategy should not change"
+        );
+        assertEq(IVault(MC.YNBNBX).totalAssets(), totalAssetsOfYnBNBXBefore, "Total assets of ynBNBX should not change");
+        assertEq(IVault(MC.YNBNBX).totalSupply(), totalSupplyOfYnBNBXBefore, "Total supply of ynBNBX should not change");
+        assertApproxEqRel(
+            clisBnb.balanceOf(newYieldNestMpcWallet),
+            slisBNBStakedBefore,
+            0.05e18,
+            "ClisBNB balance of newYieldNestMpcWallet should be within 95% of slisBNBStakedBefore"
         );
     }
 
