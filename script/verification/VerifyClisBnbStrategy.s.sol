@@ -44,7 +44,7 @@ contract VerifyClisBnbStrategy is BaseScript, Test {
         );
         assertEq(
             address(clisBnbStrategy.yieldNestMpcWallet()),
-            address(contracts.OLD_YIELDNEST_MPC_WALLET()),
+            address(contracts.YIELDNEST_MPC_WALLET()),
             "yield nest mpc wallet is invalid"
         );
         assertEq(address(clisBnbStrategy.slisBnb()), address(contracts.SLIS_BNB()), "slis bnb is invalid");
@@ -69,7 +69,7 @@ contract VerifyClisBnbStrategy is BaseScript, Test {
         address[] memory allowList = new address[](1);
         allowList[0] = contracts.SLIS_BNB_PROVIDER();
         _verifyApprovalRule(clisBnbStrategy, contracts.SLIS_BNB(), allowList);
-        _verifyProvideRule(clisBnbStrategy, contracts.SLIS_BNB_PROVIDER(), contracts.OLD_YIELDNEST_MPC_WALLET());
+        _verifyProvideRule(clisBnbStrategy, contracts.SLIS_BNB_PROVIDER(), contracts.YIELDNEST_MPC_WALLET());
 
         assertFalse(clisBnbStrategy.paused(), "paused is invalid");
 

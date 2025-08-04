@@ -85,7 +85,7 @@ contract DeployClisBnbStrategy is BaseScript {
             alwaysComputeTotalAssets: alwaysComputeTotalAssets,
             defaultAssetIndex: 0,
             slisBnb: contracts.SLIS_BNB(),
-            yieldNestMpcWallet: contracts.OLD_YIELDNEST_MPC_WALLET(),
+            yieldNestMpcWallet: contracts.YIELDNEST_MPC_WALLET(),
             listaInteraction: contracts.INTERACTION(),
             slisBnbProvider: contracts.SLIS_BNB_PROVIDER()
         });
@@ -115,7 +115,7 @@ contract DeployClisBnbStrategy is BaseScript {
         SafeRules.RuleParams[] memory rules = new SafeRules.RuleParams[](rulesLength);
 
         rules[i++] = BaseRules.getApprovalRule(contracts.SLIS_BNB(), contracts.SLIS_BNB_PROVIDER());
-        rules[i++] = ProvideRules.getProvideRule(contracts.SLIS_BNB_PROVIDER(), contracts.OLD_YIELDNEST_MPC_WALLET());
+        rules[i++] = ProvideRules.getProvideRule(contracts.SLIS_BNB_PROVIDER(), contracts.YIELDNEST_MPC_WALLET());
         rules[i++] = ProvideRules.getReleaseRule(contracts.SLIS_BNB_PROVIDER(), address(clisBnbStrategy));
 
         if (i != rulesLength) {
