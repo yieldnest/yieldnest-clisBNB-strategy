@@ -28,7 +28,8 @@ library MainnetContracts {
     address public constant YNBNBX = 0x32C830f5c34122C6afB8aE87ABA541B7900a2C5F;
 
     address public constant SLIS_BNB_PROVIDER = 0xfD31e1C5e5571f8E7FE318f80888C1e6da97819b;
-    address public constant YIELDNEST_MPC_WALLET = 0x24bcA21172B564474734Ae25900663BCC964d92b;
+    // MPC wallet migrated from old to new. OLD MPC wallet was 0x24bcA21172B564474734Ae25900663BCC964d92b;
+    address public constant YIELDNEST_MPC_WALLET = 0x7d048240407efB4fcf9E3889C0683B5077ad4472;
     address public constant SLIS_BNB = 0xB0b84D294e0C75A6abe60171b70edEb2EFd14A1B;
     address public constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address public constant SLIS_BNB_STAKE_MANAGER = 0x1adB950d8bB3dA4bE104211D5AB038628e477fE6;
